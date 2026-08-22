@@ -205,7 +205,10 @@ async function sync() {
   await saveRegistry(r);
   return { a, r };
 }
-const grokExe = process.platform === "win32" ? "grok.cmd" : "grok";
+// The official Windows installer exposes Grok as `grok.exe` (not necessarily
+// an npm-style `grok.cmd` shim). Keep the executable name aligned with the
+// installed CLI so Windows PATH discovery works in both PowerShell and cmd.
+const grokExe = process.platform === "win32" ? "grok.exe" : "grok";
 const spawnGrok = (argv: string[], options: any = {}) =>
   spawn(grokExe, argv, { ...options, ...(process.platform === "win32" ? { shell: true } : {}) });
 async function cliVersion() {
