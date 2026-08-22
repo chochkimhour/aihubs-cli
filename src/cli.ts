@@ -60,9 +60,9 @@ function printAccountTable(accounts: Json[], active?: string) {
   );
 }
 function printHelp() {
-  console.log(color("1;36", "\ngrok-auth — Grok account manager\n"));
+  console.log(color("1;36", "\ngrok-cli — Grok account manager\n"));
   console.log(color("1;33", "USAGE"));
-  console.log("  grok-auth <command> [options]\n");
+  console.log("  grok-cli <command> [options]\n");
   console.log(color("1;33", "ACCOUNT COMMANDS"));
   console.log("  list                         List saved Grok accounts");
   console.log("  current                      Show the active account");
@@ -88,7 +88,7 @@ function printHelp() {
   console.log("  clean                        Preview cleanup actions");
   console.log("  repair                       Check registry consistency");
   console.log("  config                       Show configuration information");
-  console.log("  watch                        Watch for auth file changes\n");
+  console.log("  watch                        Watch for auth file changes (Ctrl-C to stop)\n");
   console.log(color("1;33", "OPTIONS"));
   console.log("  --json                       Output machine-readable JSON");
   console.log("  --yes                        Confirm destructive operations");
@@ -116,6 +116,9 @@ async function readJson(file: string, fallback: any) {
 async function ensure() {
   await fs.mkdir(path.join(base, "accounts"), { recursive: true });
   await fs.mkdir(path.join(base, "backups"), { recursive: true });
+}
+async function exists(file: string) {
+  try { await fs.access(file); return true; } catch { return false; }
 }
 async function auth(): Promise<Json> {
   const v = await readJson(authPath, {});
@@ -195,10 +198,7 @@ async function sync() {
 }
 const grokExe = "grok";
 const spawnGrok = (argv: string[], options: any = {}) =>
-  spawn(grokExe, argv, {
-    ...options,
-    ...(process.platform === "win32" ? { shell: true } : {}),
-  });
+  spawn(grokExe, argv, options);
 async function cliVersion() {
   return new Promise<string>((resolve) => {
     const p = spawnGrok(["--version"], { stdio: ["ignore", "pipe", "ignore"] });
@@ -236,7 +236,8 @@ async function login() {
 async function main() {
   try {
     const cmd = cleanArgs[0] || "help";
-    if (cmd === "--version") return out("grok-auth 0.1.0");
+    if (args.includes("--help") || args.includes("-h")) return printHelp();
+    if (args.includes("--version") || args.includes("-v")) return out("grok-cli 1.0.0");
     if (cmd === "help") return printHelp();
     if (cmd === "login") return await login();
     if (cmd === "list" || cmd === "status" || cmd === "current") {
@@ -292,18 +293,10 @@ async function main() {
     if (cmd === "remove") return await removeAccount(cleanArgs[1]);
     if (cmd === "export") return await exportCmd(cleanArgs[1]);
     if (cmd === "import") return await importCmd(cleanArgs[1]);
-    if (cmd === "clean" || cmd === "repair")
-      return out({ success: true, command: cmd, preview: true, changes: [] });
-    if (cmd === "config")
-      return out({
-        success: true,
-        message: "Configuration is not yet customized.",
-      });
-    if (cmd === "watch")
-      return fail(
-        "WATCH_REQUIRES_MODE",
-        "Watch mode is intentionally foreground-only and is not available in this release.",
-      );
+    if (cmd === "clean") return await cleanCmd();
+    if (cmd === "repair") return await repairCmd();
+    if (cmd === "config") return out({ success: true, grokHome: home, managerHome: base, authFile: authPath, registryFile: registryPath, grokCommand: grokExe });
+    if (cmd === "watch") return await watchCmd();
     fail("UNKNOWN_COMMAND", `Unknown command '${cmd}'.`);
   } catch (e: any) {
     if (!e.silent) fail("OPERATION_FAILED", e.message);
@@ -355,6 +348,8 @@ async function aliasCmd() {
   if (!x)
     return fail("ACCOUNT_NOT_FOUND", `Account '${account}' was not found`);
   if (op === "set") {
+    if (!alias || !/^[a-zA-Z0-9][a-zA-Z0-9._-]{0,31}$/.test(alias))
+      return fail("INVALID_ALIAS", "Alias must be 1-32 characters using letters, numbers, dots, underscores, or hyphens.");
     if (r.some((y) => y !== x && y.alias === alias))
       return fail(
         "ALIAS_CONFLICT",
@@ -372,9 +367,10 @@ async function aliasCmd() {
 }
 async function removeAccount(name?: string) {
   const { r } = await sync();
-  const x = r.find((x) => x.id === name || x.alias === name);
+  const index = name && /^\d+$/.test(name) ? Number(name) - 1 : -1;
+  const x = (index >= 0 ? r[index] : undefined) || r.find((x) => x.id === name || x.alias === name || x.email === name);
   if (!x) return fail("ACCOUNT_NOT_FOUND", `Account '${name}' was not found`);
-  if (!yes && !jsonMode)
+  if (!yes)
     return fail(
       "CONFIRMATION_REQUIRED",
       "Use --yes to confirm account removal.",
@@ -416,18 +412,45 @@ async function importCmd(file?: string) {
     return fail("INVALID_IMPORT", "Unsupported import structure.");
   await ensure();
   const r = await registry();
+  let imported = 0;
   for (const x of p.accounts) {
     if (x.credential?.entry) {
       const id = x.id || crypto.randomUUID();
+      if (r.some((y) => y.id === id || (x.email && y.email === x.email))) continue;
       await fs.writeFile(
         path.join(base, "accounts", id + ".json"),
         JSON.stringify(x.credential, null, 2) + "\n",
         { mode: 0o600 },
       );
       r.push({ ...x, id });
+      imported++;
     }
   }
   await saveRegistry(r);
-  out({ success: true, imported: p.accounts.length });
+  out({ success: true, imported, skipped: p.accounts.length - imported, metadataOnlyAccounts: p.accounts.filter((x: Json) => !x.credential?.entry).length });
+}
+async function repairCmd() {
+  await ensure();
+  const r = await registry();
+  const valid = r.filter((x) => x && typeof x.id === "string" && x.authEntryKey);
+  const duplicates = valid.length - new Map(valid.map((x) => [x.id, x])).size;
+  const missingSnapshots = (await Promise.all(valid.map(async (x) => !(await exists(path.join(base, "accounts", `${x.id}.json`)))))).filter(Boolean).length;
+  return out({ success: true, command: "repair", valid: valid.length, invalid: r.length - valid.length, duplicates, missingSnapshots, changes: [] });
+}
+async function cleanCmd() {
+  await ensure();
+  const r = await registry();
+  const known = new Set(r.map((x) => `${x.id}.json`));
+  const files = await fs.readdir(path.join(base, "accounts"));
+  const orphaned = files.filter((x) => x.endsWith(".json") && !known.has(x));
+  if (orphaned.length && yes) await Promise.all(orphaned.map((x) => fs.rm(path.join(base, "accounts", x), { force: true })));
+  return out({ success: true, command: "clean", preview: !yes, orphanedSnapshots: orphaned, removed: yes ? orphaned : [] });
+}
+async function watchCmd() {
+  await ensure();
+  if (!await exists(authPath)) return fail("AUTH_FILE_NOT_FOUND", `Grok auth file not found: ${authPath}`);
+  if (!jsonMode) console.log(`Watching ${authPath}. Press Ctrl-C to stop.`);
+  const watcher = (await import("node:fs")).watch(authPath, async () => { await sync(); out({ success: true, event: "auth-changed", file: authPath }); });
+  await new Promise<void>((resolve) => process.once("SIGINT", () => { watcher.close(); resolve(); }));
 }
 main();
