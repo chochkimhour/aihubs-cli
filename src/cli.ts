@@ -182,8 +182,8 @@ async function sync() {
     let x = r.find(
       (x) =>
         x.authEntryKey === key &&
-        x.userId &&
-        (x.userId === e.user_id || x.userId === e.principal_id),
+        ((!e.user_id && !e.principal_id) ||
+          (x.userId && (x.userId === e.user_id || x.userId === e.principal_id))),
     );
     if (!x) {
       const id = crypto.randomUUID();
@@ -196,12 +196,18 @@ async function sync() {
       { mode: 0o600 },
     );
   }
+  r = r.filter((item, index, all) =>
+    all.findIndex((other) =>
+      other.authEntryKey === item.authEntryKey &&
+      (other.userId || "") === (item.userId || ""),
+    ) === index,
+  );
   await saveRegistry(r);
   return { a, r };
 }
-const grokExe = "grok";
+const grokExe = process.platform === "win32" ? "grok.cmd" : "grok";
 const spawnGrok = (argv: string[], options: any = {}) =>
-  spawn(grokExe, argv, options);
+  spawn(grokExe, argv, { ...options, ...(process.platform === "win32" ? { shell: true } : {}) });
 async function cliVersion() {
   return new Promise<string>((resolve) => {
     const p = spawnGrok(["--version"], { stdio: ["ignore", "pipe", "ignore"] });
@@ -212,6 +218,8 @@ async function cliVersion() {
   });
 }
 async function login() {
+  // Preserve the currently active account before Grok replaces auth.json.
+  if (await exists(authPath)) await sync();
   const extra = cleanArgs.slice(1);
   const supported = extra.length
     ? ["--device-auth", "--device-code", "--oauth"].includes(extra[0])
