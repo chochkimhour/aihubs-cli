@@ -39,26 +39,29 @@ grok-cli login
 grok-cli login --device-auth
 grok-cli switch 1
 grok-cli switch user@example.com
+grok-cli move 2 top
+grok-cli move user@example.com bottom
 grok-cli alias set 1 personal
 grok-cli alias clear personal
 grok-cli remove 1 --yes
-grok-cli clean --yes
+grok-cli clean
+grok-cli clean --backups --yes
 grok-cli repair
 grok-cli config
 grok-cli watch
 ```
 
-Accounts can be selected by row number, ID, email, or alias. Switching creates a backup before updating Grok's active authentication file.
+Accounts can be selected by row number, ID, email, or alias. Use `move <account> top` or `move <account> bottom` to change the list order. Switching creates a backup before updating Grok's active authentication file.
 
 ## Import and export
 
 ```powershell
-grok-auth export accounts.json
-grok-auth export accounts.json --include-credentials
+grok-cli export accounts.json
+grok-cli export accounts.json --include-credentials --confirm-sensitive-export
 grok-auth import accounts.json
 ```
 
-Metadata-only export is the default. Credential export requires `--include-credentials` and contains sensitive live authentication data.
+Metadata-only export is the default. Credential export requires `--include-credentials --confirm-sensitive-export` and contains sensitive live authentication data.
 
 ## JSON mode
 

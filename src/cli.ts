@@ -25,13 +25,15 @@ const out = (v: any) =>
 const color = (code: string, value: string) =>
   colorEnabled ? `\u001b[${code}m${value}\u001b[0m` : value;
 function printAccountTable(accounts: Json[], active?: string) {
+  const hasPlanData = accounts.some((account) => account.plan);
+  const hasAuthData = accounts.some((account) => account.authMode);
   const hasResetData = accounts.some(
     (account) => account.resetAt || account.resetIn || account.usageResetAt,
   );
   console.log(
     color(
       "1;36",
-      `     ACCOUNT                          PLAN     5H USAGE              WEEKLY USAGE  LAST ACTIVITY${hasResetData ? "  RESET IN" : ""}`,
+      `     ID  ACCOUNT                        ${hasPlanData ? "PLAN     " : ""}${hasAuthData ? "AUTH   " : ""}STATUS       LAST ACTIVITY${hasResetData ? "  RESET IN" : ""}`,
     ),
   );
   console.log(
@@ -43,16 +45,15 @@ function printAccountTable(accounts: Json[], active?: string) {
     const name = String(
       account.email || account.displayName || account.id,
     ).padEnd(34);
-    const plan = String(account.plan || account.authMode || "-")
-      .toUpperCase()
-      .padEnd(8);
+    const plan = hasPlanData ? String(account.plan || "-").toUpperCase().padEnd(8) : "";
+    const authMode = hasAuthData ? String(account.authMode || "-").toUpperCase().padEnd(7) : "";
     const usage = String(account.status || "-")
       .toLowerCase()
-      .padEnd(19);
+      .padEnd(12);
     const last = account.lastUsedAt || account.active ? "Now" : "-";
     const reset =
       account.resetIn || account.usageResetAt || account.resetAt || "-";
-    const row = `${marker} ${number} ${name} ${plan} ${usage} -             ${last}${hasResetData ? `  ${reset}` : ""}`;
+    const row = `${marker} ${number} ${name} ${plan}${authMode}${usage} ${last}${hasResetData ? `  ${reset}` : ""}`;
     console.log(account.id === active ? color("1;32", row) : row);
   }
   console.log(
@@ -73,6 +74,7 @@ function printHelp() {
     "  login [--device-auth]        Sign in through the official Grok CLI",
   );
   console.log("  switch <number|email|alias>  Switch the active account");
+  console.log("  move <account> <top|bottom>  Move an account in the list");
   console.log("  remove <number|email|alias>  Remove a saved account");
   console.log("  alias set <account> <alias>  Assign an account alias");
   console.log("  alias clear <account>        Remove an account alias\n");
@@ -86,6 +88,7 @@ function printHelp() {
     "  import <file>                Import a validated account export",
   );
   console.log("  clean                        Preview cleanup actions");
+  console.log("  clean --backups --yes       Remove saved authentication backups");
   console.log("  repair                       Check registry consistency");
   console.log("  config                       Show configuration information");
   console.log("  watch                        Watch for auth file changes (Ctrl-C to stop)\n");
@@ -289,6 +292,7 @@ async function main() {
       );
     }
     if (cmd === "switch") return await switchAccount(cleanArgs[1]);
+    if (cmd === "move") return await moveAccount(cleanArgs[1], cleanArgs[2]);
     if (cmd === "alias") return await aliasCmd();
     if (cmd === "remove") return await removeAccount(cleanArgs[1]);
     if (cmd === "export") return await exportCmd(cleanArgs[1]);
@@ -339,6 +343,17 @@ async function switchAccount(name?: string) {
     );
   else out({ success: true, active: target.id });
 }
+async function moveAccount(name?: string, position?: string) {
+  const { r } = await sync();
+  const index = name && /^\d+$/.test(name) ? Number(name) - 1 : -1;
+  const target = (index >= 0 ? r[index] : undefined) || r.find((x) => x.id === name || x.alias === name || x.email === name);
+  if (!target) return fail("ACCOUNT_NOT_FOUND", `Account '${name || ""}' was not found`);
+  if (position !== "top" && position !== "bottom") return fail("INVALID_POSITION", "Use move <account> top or move <account> bottom.");
+  const remaining = r.filter((x) => x !== target);
+  position === "top" ? remaining.unshift(target) : remaining.push(target);
+  await saveRegistry(remaining);
+  out({ success: true, moved: target.id, position });
+}
 async function aliasCmd() {
   const { r } = await sync();
   const op = cleanArgs[1],
@@ -383,6 +398,8 @@ async function exportCmd(file?: string) {
   if (!file) return fail("INVALID_USAGE", "Specify an export file.");
   const { r } = await sync();
   const metadataOnly = !args.includes("--include-credentials");
+  if (!metadataOnly && !args.includes("--confirm-sensitive-export"))
+    return fail("CONFIRMATION_REQUIRED", "Credential export is sensitive. Re-run with --include-credentials --confirm-sensitive-export.");
   const payload = metadataOnly
     ? { version: 1, accounts: r.map(redact) }
     : {
@@ -415,6 +432,8 @@ async function importCmd(file?: string) {
   let imported = 0;
   for (const x of p.accounts) {
     if (x.credential?.entry) {
+      if (!x.credential.key || typeof x.credential.entry !== "object" || Array.isArray(x.credential.entry))
+        continue;
       const id = x.id || crypto.randomUUID();
       if (r.some((y) => y.id === id || (x.email && y.email === x.email))) continue;
       await fs.writeFile(
@@ -444,7 +463,11 @@ async function cleanCmd() {
   const files = await fs.readdir(path.join(base, "accounts"));
   const orphaned = files.filter((x) => x.endsWith(".json") && !known.has(x));
   if (orphaned.length && yes) await Promise.all(orphaned.map((x) => fs.rm(path.join(base, "accounts", x), { force: true })));
-  return out({ success: true, command: "clean", preview: !yes, orphanedSnapshots: orphaned, removed: yes ? orphaned : [] });
+  const backupDir = path.join(base, "backups");
+  const backupFiles = (await fs.readdir(backupDir)).filter((x) => x.endsWith(".json"));
+  const removeBackups = args.includes("--backups");
+  if (removeBackups && yes) await Promise.all(backupFiles.map((x) => fs.rm(path.join(backupDir, x), { force: true })));
+  return out({ success: true, command: "clean", preview: !yes, orphanedSnapshots: orphaned, removed: yes ? orphaned : [], backups: removeBackups ? (yes ? backupFiles : { preview: backupFiles }) : undefined });
 }
 async function watchCmd() {
   await ensure();
