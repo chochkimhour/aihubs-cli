@@ -1,0 +1,29 @@
+{
+  "name": "grok-auth",
+  "version": "0.1.0",
+  "description": "Local multi-account manager for the Grok Build CLI",
+  "type": "module",
+  "bin": {
+    "grok-auth": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "SECURITY.md",
+    "CHANGELOG.md"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "prettier": "^3.9.6",
+    "typescript": "^5.7.2"
+  }
+}

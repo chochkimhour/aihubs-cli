@@ -1,0 +1,26 @@
+node_modules/
+dist/
+coverage/
+*.log
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+
+# Local credentials and account-manager state
+.grok/
+.grok-auth/
+auth.json
+registry.json
+accounts/
+backups/
+
+# Package artifacts
+*.tgz
+npm-debug.log*
+
+# Editors and operating systems
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
