@@ -1,6 +1,6 @@
 {
   "name": "@chochkimhour/grok-cli",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Local multi-account manager for the Grok Build CLI",
   "keywords": [
     "grok",
