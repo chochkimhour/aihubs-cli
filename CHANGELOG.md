@@ -1,5 +1,5 @@
 # Changelog
 
-## 0.1.0
+## 1.0.0
 
-Initial local Grok account manager.
+Initial stable local Grok account manager release.

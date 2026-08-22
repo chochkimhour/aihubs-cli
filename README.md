@@ -7,7 +7,7 @@
 ![npm](https://img.shields.io/badge/npm-ready-CB3837?logo=npm&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-`grok-auth` is a local multi-account manager for the official Grok Build CLI. It preserves Grok's canonical `~/.grok/auth.json`, delegates login to `grok`, and provides account listing, switching, aliases, import/export, and status inspection.
+`grok-auth` **v1.0.0** is a local multi-account manager for the official Grok Build CLI. It preserves Grok's canonical `~/.grok/auth.json`, delegates login to `grok`, and provides account listing, switching, aliases, import/export, and status inspection.
 
 It does not implement OAuth, replace Grok, use a backend, or collect telemetry.
 

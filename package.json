@@ -1,6 +1,6 @@
 {
   "name": "grok-auth",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Local multi-account manager for the Grok Build CLI",
   "type": "module",
   "bin": {
