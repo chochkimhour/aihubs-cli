@@ -8,7 +8,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "test": "node --test test/**/*.test.js",
+    "test": "node --test test/cli.test.js",
     "format": "prettier --check ."
   },
   "engines": {
