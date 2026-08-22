@@ -2,6 +2,20 @@
   "name": "@chochkimhour/grok-cli",
   "version": "1.0.0",
   "description": "Local multi-account manager for the Grok Build CLI",
+  "keywords": [
+    "grok",
+    "grok-cli",
+    "cli",
+    "account-manager",
+    "multi-account",
+    "typescript",
+    "nodejs",
+    "cross-platform",
+    "windows",
+    "macos",
+    "linux",
+    "authentication"
+  ],
   "type": "module",
   "bin": {
     "grok-cli": "dist/cli.js"

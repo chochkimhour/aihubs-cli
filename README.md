@@ -104,6 +104,6 @@ The package works on Windows, macOS, and Linux with Node.js 20 or newer. Uninsta
 
 ## License
 
-Copyright © 2026 Choch Kimhour.
+Copyright © 2026.
 
 This project is licensed under the MIT License. See [LICENSE](LICENSE).
