@@ -22,7 +22,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "test": "node --test test/*.test.js",
+    "test": "node --test",
     "format": "prettier --check .",
     "format:write": "prettier --write src test"
   },
