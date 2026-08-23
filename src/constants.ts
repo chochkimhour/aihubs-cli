@@ -23,7 +23,14 @@ export const SENSITIVE_KEY =
   /key|token|cookie|authorization|secret|password|api[_-]?key/i;
 export const DEFAULT_USAGE_CACHE_TTL_MS = 45_000;
 export function providerNotFoundMessage(command: string): string {
-  return `Provider CLI '${command}' was not found in PATH. Install the selected provider CLI, then verify it with '${command} --version'.`;
+  const name = command.replace(/\.cmd$/i, "");
+  const install =
+    name === "grok"
+      ? "Install xAI Grok CLI from https://x.ai/cli, then reopen PowerShell."
+      : name === "gemini"
+        ? "Install Gemini CLI with 'npm install -g @google/gemini-cli', then reopen PowerShell."
+        : `Install '${name}' CLI, then reopen PowerShell.`;
+  return `Provider CLI '${command}' was not found in PATH. ${install} Verify it with '${command} --version'.`;
 }
 // Override this during local development to point at a mock or installed provider CLI.
 export const PROVIDER_COMMAND =
@@ -32,7 +39,7 @@ export const PROVIDER_COMMAND =
 
 export const PROVIDER_COMMANDS: Record<string, string> = {
   codex: process.platform === "win32" ? "codex.cmd" : "codex",
-  grok: process.platform === "win32" ? "grok.cmd" : "grok",
+  grok: process.platform === "win32" ? "grok.exe" : "grok",
   gemini: process.platform === "win32" ? "gemini.cmd" : "gemini",
   freebuff: process.platform === "win32" ? "freebuff.cmd" : "freebuff",
   claude: process.platform === "win32" ? "claude.cmd" : "claude",

@@ -34,19 +34,35 @@ export function runProvider(
   failMessage: (code: number | null) => string,
   command = PROVIDER_COMMAND,
 ): Promise<void> {
-  const isFreebuffLogin =
-    argv[0] === "login" && /freebuff(?:\.cmd)?$/i.test(command);
-  const child = isFreebuffLogin
-    ? spawnProvider(argv, { stdio: ["inherit", "pipe", "inherit"] }, command)
-    : spawnProvider(argv, { stdio: "inherit" }, command);
-  if (isFreebuffLogin) pipeFreebuffOutput(child);
-  return new Promise((resolve, reject) => {
-    child.on("close", (code) =>
-      code === 0 ? resolve() : reject(new Error(failMessage(code))),
-    );
-    child.on("error", () =>
-      reject(new Error(providerNotFoundMessage(command))),
-    );
+  return (async () => {
+    if (!(await commandExists(command)))
+      throw new Error(providerNotFoundMessage(command));
+    const isFreebuffLogin =
+      argv[0] === "login" && /freebuff(?:\.cmd)?$/i.test(command);
+    const child = isFreebuffLogin
+      ? spawnProvider(argv, { stdio: ["inherit", "pipe", "inherit"] }, command)
+      : spawnProvider(argv, { stdio: "inherit" }, command);
+    if (isFreebuffLogin) pipeFreebuffOutput(child);
+    await new Promise<void>((resolve, reject) => {
+      child.on("close", (code) =>
+        code === 0 ? resolve() : reject(new Error(failMessage(code))),
+      );
+      child.on("error", () =>
+        reject(new Error(providerNotFoundMessage(command))),
+      );
+    });
+  })();
+}
+
+function commandExists(command: string): Promise<boolean> {
+  const lookup = process.platform === "win32" ? "where.exe" : "which";
+  return new Promise((resolve) => {
+    const child = spawn(lookup, [command], {
+      stdio: "ignore",
+      windowsHide: true,
+    });
+    child.on("close", (code) => resolve(code === 0));
+    child.on("error", () => resolve(false));
   });
 }
 

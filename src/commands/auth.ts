@@ -32,7 +32,9 @@ export async function loginCommand(ctx: CliContext): Promise<void> {
   await runProvider(
     ["login", ...loginArgs],
     (code) =>
-      `Login through '${providerCommand || "the default provider CLI"}' failed with exit code ${code}. Verify the provider CLI is installed and try again.`,
+      providerName === "gemini"
+        ? `Gemini CLI login failed with exit code ${code}. Google ended personal-account Gemini CLI sign-in on June 18, 2026. Use a Gemini API key, an eligible enterprise account, or migrate to Antigravity: https://antigravity.google`
+        : `Login through '${providerCommand || "the default provider CLI"}' failed with exit code ${code}. Verify the provider CLI is installed and try again.`,
     providerCommand,
   );
   const { a, r } = await ctx.store.sync(false, providerName || "default");
