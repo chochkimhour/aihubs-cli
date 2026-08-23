@@ -1,6 +1,13 @@
 # aihubs-cli
 
-`aihubs-cli` v1.2.0 is a local multi-account manager for AI CLI providers. The current provider integration is the official configured provider CLI; provider-specific integrations live under `src/providers/` so additional providers can be added without treating provider as the application itself.
+[![Node.js](https://img.shields.io/badge/Node.js-20%2B-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![npm](https://img.shields.io/badge/npm-package-CB3837?logo=npm&logoColor=white)](https://www.npmjs.com/package/aihubs-cli)
+[![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-CI-2088FF?logo=github-actions&logoColor=white)](https://github.com/chochkimhour/aihubs-cli/actions)
+[![Multi-Provider](https://img.shields.io/badge/AI_Providers-Multi--Provider-111827)](https://github.com/chochkimhour/aihubs-cli)
+[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
+
+`aihubs-cli` is a local multi-account manager for AI CLI providers. The current provider integration is the official configured provider CLI; provider-specific integrations live under `src/providers/` so additional providers can be added without treating provider as the application itself.
 
 It supports account listing, switching, aliases, import/export, status, usage, sessions, and safe multi-account removal. It does not provide universal login: each AI provider has its own authentication and usage APIs.
 

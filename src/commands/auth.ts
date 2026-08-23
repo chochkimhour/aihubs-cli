@@ -19,7 +19,8 @@ export async function loginCommand(ctx: CliContext): Promise<void> {
     ctx.fail("UNSUPPORTED_FLAG", `Unsupported login flag '${loginArgs[0]}'.`);
   await runProvider(
     ["login", ...loginArgs],
-    (code) => `provider login exited with code ${code}`,
+    (code) =>
+      `Login through '${providerCommand || "the default provider CLI"}' failed with exit code ${code}. Verify the provider CLI is installed and try again.`,
     providerCommand,
   );
   const { a, r } = await ctx.store.sync(false, providerName || "default");

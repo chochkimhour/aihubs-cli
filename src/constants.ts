@@ -22,8 +22,9 @@ export const VERSION = readPackageVersion();
 export const SENSITIVE_KEY =
   /key|token|cookie|authorization|secret|password|api[_-]?key/i;
 export const DEFAULT_USAGE_CACHE_TTL_MS = 45_000;
-export const PROVIDER_NOT_FOUND =
-  "Provider CLI was not found. Install provider and ensure `provider` is in PATH.";
+export function providerNotFoundMessage(command: string): string {
+  return `Provider CLI '${command}' was not found in PATH. Install that provider CLI, then verify it with '${command} --version'. You can choose a provider with 'aihubs-cli login <provider>' (for example: codex, grok, kiro, gemini, or openrouter).`;
+}
 // Override this during local development to point at a mock or installed provider CLI.
 export const PROVIDER_COMMAND =
   process.env.AIHUBS_PROVIDER_COMMAND ||

@@ -1,5 +1,5 @@
 import { spawn, type SpawnOptions } from "node:child_process";
-import { PROVIDER_COMMAND, PROVIDER_NOT_FOUND } from "../constants.js";
+import { PROVIDER_COMMAND, providerNotFoundMessage } from "../constants.js";
 
 export function spawnProvider(argv: string[], options: SpawnOptions = {}, command = PROVIDER_COMMAND) {
   const useShell =
@@ -31,6 +31,6 @@ export function runProvider(
     child.on("close", (code) =>
       code === 0 ? resolve() : reject(new Error(failMessage(code))),
     );
-    child.on("error", () => reject(new Error(PROVIDER_NOT_FOUND)));
+    child.on("error", () => reject(new Error(providerNotFoundMessage(command))));
   });
 }

@@ -14,10 +14,20 @@ export class AccountStore {
     await fs.mkdir(this.paths.backupsDir, { recursive: true });
   }
 
-  async auth(): Promise<Json> {
+  async auth(provider = "default"): Promise<Json> {
     const value = await readJson(this.paths.authFile, {});
     if (!value || Array.isArray(value) || typeof value !== "object")
       throw new Error("Provider auth.json must contain a JSON object");
+    if (provider === "codex" && value.tokens && typeof value.tokens === "object") {
+      const tokens = value.tokens as Json;
+      return {
+        codex: {
+          email: "Codex account",
+          user_id: tokens.account_id || "codex-account",
+          auth_mode: value.auth_mode || "chatgpt",
+        },
+      };
+    }
     return value;
   }
 
@@ -49,7 +59,7 @@ export class AccountStore {
     let a: Json;
     let r = await this.registry();
     try {
-      a = await this.auth();
+      a = await this.auth(provider);
     } catch (error: any) {
       if (
         allowStoredAccounts &&

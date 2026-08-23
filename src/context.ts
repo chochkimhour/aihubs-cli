@@ -30,7 +30,11 @@ export function createContext(
     !process.env.NO_COLOR &&
     Boolean(process.stdout.isTTY);
   const positional = argv.filter((a) => !a.startsWith("--"));
-  const paths = resolvePaths();
+  const providerArg =
+    positional[0] === "login" || positional[0] === "list"
+      ? positional[1]?.toLowerCase()
+      : undefined;
+  const paths = resolvePaths(providerArg === "claudecode" ? "claude" : providerArg);
   const color = (code: string, value: string) =>
     colorize(colorEnabled, code, value);
 

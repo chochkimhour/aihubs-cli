@@ -12,8 +12,12 @@ export interface AppPaths {
   backupsDir: string;
 }
 
-export function resolvePaths(env: NodeJS.ProcessEnv = process.env): AppPaths {
-  const providerHome = env.PROVIDER_HOME || path.join(homedir(), ".provider");
+export function resolvePaths(provider = "default", env: NodeJS.ProcessEnv = process.env): AppPaths {
+  const homes: Record<string, string> = {
+    codex: path.join(homedir(), ".codex"),
+    claude: path.join(homedir(), ".claude"),
+  };
+  const providerHome = env.PROVIDER_HOME || homes[provider] || path.join(homedir(), ".provider");
   const managerHome = env.PROVIDER_AUTH_HOME || path.join(homedir(), ".provider-auth");
   return {
     providerHome,
