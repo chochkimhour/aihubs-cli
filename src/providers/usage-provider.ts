@@ -16,6 +16,12 @@ export interface ProviderUsage {
   remaining?: number;
   currency?: string;
   subscriptionTier?: string;
+  plan?: string;
+  fiveHourUsage?: string;
+  weeklyUsage?: string;
+  weeklyResetAt?: string;
+  fiveHourResetAt?: string;
+  errorStatus?: string;
   source: "provider-billing";
 }
 
@@ -23,6 +29,7 @@ export class ProviderUsageError extends Error {
   constructor(
     public readonly kind: "auth" | "unavailable" | "unsupported",
     message: string,
+    public readonly statusCode?: number,
   ) {
     super(message);
     this.name = "ProviderUsageError";
@@ -54,6 +61,25 @@ function firstNumber(...values: any[]): number | undefined {
   for (const value of values) {
     const result = numberValue(value);
     if (result !== undefined) return result;
+  }
+  return undefined;
+}
+
+function findPlan(value: any, accountId: string): string | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  if (typeof value.plan_type === "string") return value.plan_type;
+  if (typeof value.planType === "string") return value.planType;
+  if (typeof value.plan === "string") return value.plan;
+  if (value.account_id === accountId || value.id === accountId) {
+    return typeof value.subscription_tier === "string"
+      ? value.subscription_tier
+      : typeof value.subscriptionTier === "string"
+        ? value.subscriptionTier
+        : undefined;
+  }
+  for (const child of Object.values(value)) {
+    const result = findPlan(child, accountId);
+    if (result) return result;
   }
   return undefined;
 }
@@ -125,7 +151,51 @@ export function normalizeProviderBilling(body: any): ProviderUsage {
   };
 }
 
-export function mergeProviderUsage(primary: ProviderUsage, extra: ProviderUsage): ProviderUsage {
+export function normalizeCodexUsage(body: any): ProviderUsage {
+  const rateLimit = body?.rate_limit || body?.rateLimit || {};
+  const primary = rateLimit.primary_window || rateLimit.primary || {};
+  const secondary = rateLimit.secondary_window || rateLimit.secondary || {};
+  const percent = (value: any) =>
+    numberValue(value?.used_percent ?? value?.usedPercent);
+  const primaryPercent = percent(primary);
+  const secondaryPercent = percent(secondary);
+  const timestamp = (value: any) => {
+    if (typeof value === "number") return new Date(value * 1000).toISOString();
+    return typeof value === "string" ? value : undefined;
+  };
+  const primaryReset = timestamp(primary.reset_at ?? primary.resetAt);
+  const secondaryReset = timestamp(secondary.reset_at ?? secondary.resetAt);
+  if (primaryPercent === undefined && secondaryPercent === undefined)
+    throw new ProviderUsageError(
+      "unsupported",
+      "Codex returned no rate-limit data.",
+    );
+  const usage: ProviderUsage = {
+    available: true,
+    source: "provider-billing",
+    ...(typeof body?.plan_type === "string" ? { plan: body.plan_type } : {}),
+    ...(primaryPercent !== undefined
+      ? {
+          fiveHourUsage: `${Math.max(0, Math.min(100, Math.round(primaryPercent)))}%`,
+        }
+      : {}),
+    ...(secondaryPercent !== undefined
+      ? {
+          weeklyUsage: `${Math.max(0, Math.min(100, Math.round(secondaryPercent)))}%`,
+        }
+      : {}),
+    ...(primaryReset
+      ? { resetAt: primaryReset, fiveHourResetAt: primaryReset }
+      : {}),
+    ...(secondaryReset ? { weeklyResetAt: secondaryReset } : {}),
+  };
+  return usage;
+}
+
+export function mergeProviderUsage(
+  primary: ProviderUsage,
+  extra: ProviderUsage,
+): ProviderUsage {
   const merged: ProviderUsage = { available: true, source: "provider-billing" };
   const keys: (keyof ProviderUsage)[] = [
     "usagePercent",
@@ -140,6 +210,11 @@ export function mergeProviderUsage(primary: ProviderUsage, extra: ProviderUsage)
     "remaining",
     "currency",
     "subscriptionTier",
+    "plan",
+    "fiveHourUsage",
+    "weeklyUsage",
+    "fiveHourResetAt",
+    "weeklyResetAt",
   ];
   for (const key of keys) {
     const value = primary[key] ?? extra[key];
@@ -165,6 +240,89 @@ export class ProviderUsageProvider {
       : undefined;
   }
 
+  private async getCodex(
+    accountId: string,
+    entry: AuthEntry,
+  ): Promise<ProviderUsage> {
+    const token = entry.access_token || entry.token;
+    const userId = entry.account_id || entry.user_id || entry.principal_id;
+    if (!token || !userId)
+      throw new ProviderUsageError(
+        "auth",
+        "The selected Codex authentication is no longer valid.",
+      );
+    const fetchImpl = this.options.fetchImpl || fetch;
+    const response = await fetchImpl(
+      process.env.CODEX_USAGE_URL ||
+        "https://chatgpt.com/backend-api/wham/usage",
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "ChatGPT-Account-Id": userId,
+          Accept: "application/json",
+        },
+        signal: AbortSignal.timeout(15_000),
+      },
+    );
+    if (response.status === 401 || response.status === 403)
+      throw new ProviderUsageError(
+        "auth",
+        response.status === 401
+          ? "Codex authentication expired or is invalid."
+          : "Codex access is forbidden.",
+        response.status,
+      );
+    if (response.status === 429)
+      throw new ProviderUsageError(
+        "unavailable",
+        "Codex usage is rate limited.",
+        429,
+      );
+    if (response.status >= 500)
+      throw new ProviderUsageError(
+        "unavailable",
+        "Codex backend is unavailable.",
+        response.status,
+      );
+    if (!response.ok)
+      throw new ProviderUsageError(
+        "unavailable",
+        "Codex usage is currently unavailable.",
+        response.status,
+      );
+    const usage = normalizeCodexUsage(await response.json());
+    try {
+      const accountResponse = await fetchImpl(
+        process.env.CODEX_ACCOUNTS_URL ||
+          "https://chatgpt.com/backend-api/accounts",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "ChatGPT-Account-Id": userId,
+            Accept: "application/json",
+          },
+          signal: AbortSignal.timeout(15_000),
+        },
+      );
+      if (accountResponse.ok) {
+        const plan = findPlan(await accountResponse.json(), userId);
+        if (plan) usage.plan = plan;
+      }
+    } catch {
+      // Usage remains valid when the optional account-info request fails.
+    }
+    const file = this.cachePath(accountId);
+    if (file) {
+      await fs.mkdir(path.dirname(file), { recursive: true });
+      await fs.writeFile(
+        file,
+        JSON.stringify({ fetchedAt: Date.now(), usage }) + "\n",
+        { mode: 0o600 },
+      );
+    }
+    return usage;
+  }
+
   private async cached(accountId: string) {
     const file = this.cachePath(accountId);
     if (!file) return undefined;
@@ -183,11 +341,13 @@ export class ProviderUsageProvider {
     accountId: string,
     entry: AuthEntry,
     force = false,
+    provider?: string,
   ): Promise<ProviderUsage> {
     if (!force) {
       const cached = await this.cached(accountId);
       if (cached) return cached;
     }
+    if (provider === "codex") return this.getCodex(accountId, entry);
     const token = entry.key || entry.access_token || entry.token;
     const userId = entry.user_id || entry.principal_id;
     if (!token || !userId)
@@ -202,7 +362,9 @@ export class ProviderUsageProvider {
       DEFAULT_PROXY
     ).replace(/\/$/, "");
     const version =
-      this.options.providerVersion || process.env.PROVIDER_CLIENT_VERSION || "unknown";
+      this.options.providerVersion ||
+      process.env.PROVIDER_CLIENT_VERSION ||
+      "unknown";
     const headers = {
       Authorization: `Bearer ${token}`,
       "X-XAI-Token-Auth": entry.token_header || "xai-provider-cli",
@@ -252,7 +414,9 @@ export class ProviderUsageProvider {
       ) as PromiseRejectedResult;
       throw rejected.reason;
     }
-    const usage = parts.reduce((merged, part) => mergeProviderUsage(merged, part));
+    const usage = parts.reduce((merged, part) =>
+      mergeProviderUsage(merged, part),
+    );
     const file = this.cachePath(accountId);
     if (file) {
       await fs.mkdir(path.dirname(file), { recursive: true });

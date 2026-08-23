@@ -1,7 +1,15 @@
-import { spawn, type SpawnOptions } from "node:child_process";
+import {
+  spawn,
+  type ChildProcess,
+  type SpawnOptions,
+} from "node:child_process";
 import { PROVIDER_COMMAND, providerNotFoundMessage } from "../constants.js";
 
-export function spawnProvider(argv: string[], options: SpawnOptions = {}, command = PROVIDER_COMMAND) {
+export function spawnProvider(
+  argv: string[],
+  options: SpawnOptions = {},
+  command = PROVIDER_COMMAND,
+) {
   const useShell =
     process.platform === "win32" && /\.(cmd|bat)$/i.test(command);
   return spawn(command, argv, { ...options, shell: options.shell ?? useShell });
@@ -26,11 +34,48 @@ export function runProvider(
   failMessage: (code: number | null) => string,
   command = PROVIDER_COMMAND,
 ): Promise<void> {
-  const child = spawnProvider(argv, { stdio: "inherit" }, command);
+  const isFreebuffLogin =
+    argv[0] === "login" && /freebuff(?:\.cmd)?$/i.test(command);
+  const child = isFreebuffLogin
+    ? spawnProvider(argv, { stdio: ["inherit", "pipe", "inherit"] }, command)
+    : spawnProvider(argv, { stdio: "inherit" }, command);
+  if (isFreebuffLogin) pipeFreebuffOutput(child);
   return new Promise((resolve, reject) => {
     child.on("close", (code) =>
       code === 0 ? resolve() : reject(new Error(failMessage(code))),
     );
-    child.on("error", () => reject(new Error(providerNotFoundMessage(command))));
+    child.on("error", () =>
+      reject(new Error(providerNotFoundMessage(command))),
+    );
   });
+}
+
+function pipeFreebuffOutput(child: ChildProcess): void {
+  let buffered = "";
+  child.stdout?.on("data", (chunk: Buffer | string) => {
+    const text = chunk.toString();
+    process.stdout.write(text);
+    buffered += text;
+    const match = buffered.match(/https?:\/\/[^\s"'<>]+/);
+    if (match) {
+      openBrowser(match[0]).catch(() => undefined);
+      buffered = "";
+    }
+  });
+}
+
+async function openBrowser(url: string): Promise<void> {
+  const command =
+    process.platform === "win32"
+      ? "cmd"
+      : process.platform === "darwin"
+        ? "open"
+        : "xdg-open";
+  const args = process.platform === "win32" ? ["/c", "start", "", url] : [url];
+  const browser = spawn(command, args, {
+    detached: true,
+    stdio: "ignore",
+    windowsHide: true,
+  });
+  browser.unref();
 }

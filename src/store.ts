@@ -18,26 +18,77 @@ export class AccountStore {
     const value = await readJson(this.paths.authFile, {});
     if (!value || Array.isArray(value) || typeof value !== "object")
       throw new Error("Provider auth.json must contain a JSON object");
-    if (provider === "codex" && value.tokens && typeof value.tokens === "object") {
-      const tokens = value.tokens as Json;
-      let email = "Codex account";
-      const idToken = typeof tokens.id_token === "string" ? tokens.id_token : "";
-      try {
-        const payload = idToken.split(".")[1];
-        const claims = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
-        if (typeof claims.email === "string") email = claims.email;
-      } catch {
-        // Keep a descriptive fallback when the provider token cannot be decoded.
+    if (provider === "codex") return this.codexAccounts(value);
+    return value;
+  }
+
+  private async codexAccounts(activeAuth: Json): Promise<Json> {
+    const sources: Json[] = [activeAuth];
+    const storedPlans: Record<string, string> = {};
+    try {
+      const registry = await readJson(
+        path.join(this.paths.providerHome, "accounts", "registry.json"),
+        null,
+      );
+      for (const account of registry?.accounts || []) {
+        if (
+          typeof account?.chatgpt_account_id === "string" &&
+          typeof account?.plan === "string"
+        )
+          storedPlans[account.chatgpt_account_id] = account.plan;
       }
-      return {
-        codex: {
-          email,
-          user_id: tokens.account_id || "codex-account",
-          auth_mode: value.auth_mode || "chatgpt",
-        },
+    } catch {
+      // The auth/API data remains the source of truth when no Codex registry exists.
+    }
+    const accountDir = path.join(this.paths.providerHome, "accounts");
+    try {
+      for (const name of await fs.readdir(accountDir)) {
+        if (!name.endsWith(".auth.json")) continue;
+        const account = await readJson(path.join(accountDir, name), null);
+        if (account && typeof account === "object" && !Array.isArray(account))
+          sources.push(account);
+      }
+    } catch {
+      // Older Codex installations do not have a managed accounts directory.
+    }
+    const result: Json = {};
+    for (const [sourceIndex, source] of sources.entries()) {
+      const tokens = source.tokens;
+      if (!tokens || typeof tokens !== "object") continue;
+      const accountId =
+        typeof tokens.account_id === "string" ? tokens.account_id : undefined;
+      if (
+        !accountId ||
+        Object.values(result).some((entry) => entry?.user_id === accountId)
+      )
+        continue;
+      let email = "Codex account";
+      let plan = storedPlans[accountId] || "Unknown";
+      try {
+        const payload =
+          typeof tokens.id_token === "string"
+            ? tokens.id_token.split(".")[1]
+            : "";
+        const claims = JSON.parse(
+          Buffer.from(payload, "base64url").toString("utf8"),
+        );
+        if (typeof claims.email === "string") email = claims.email;
+        const claimsPlan =
+          claims?.["https://api.openai.com/auth"]?.chatgpt_plan_type;
+        if (typeof claimsPlan === "string") plan = claimsPlan;
+      } catch {
+        // The API remains authoritative when the ID token has no readable claims.
+      }
+      result[sourceIndex === 0 ? "codex" : accountId] = {
+        email,
+        plan,
+        access_token: tokens.access_token,
+        account_id: accountId,
+        user_id: accountId,
+        auth_mode: source.auth_mode || "chatgpt",
       };
     }
-    return value;
+    return result;
   }
 
   async registry(): Promise<Json[]> {
@@ -63,7 +114,10 @@ export class AccountStore {
     await fs.rm(snapshotPath(this.paths, accountId), { force: true });
   }
 
-  async sync(allowStoredAccounts = false, provider = "default"): Promise<{ a: Json; r: Json[] }> {
+  async sync(
+    allowStoredAccounts = false,
+    provider = "default",
+  ): Promise<{ a: Json; r: Json[] }> {
     await this.ensure();
     let a: Json;
     let r = await this.registry();
@@ -84,10 +138,10 @@ export class AccountStore {
       if (!e || typeof e !== "object") continue;
       let x = r.find(
         (item) =>
-          item.authEntryKey === key &&
-          ((!e.user_id && !e.principal_id) ||
-            (item.userId &&
-              (item.userId === e.user_id || item.userId === e.principal_id))),
+          ((e.user_id || e.principal_id) &&
+            item.userId &&
+            (item.userId === e.user_id || item.userId === e.principal_id)) ||
+          (!(e.user_id || e.principal_id) && item.authEntryKey === key),
       );
       if (!x) {
         const id = crypto.randomUUID();
@@ -97,6 +151,7 @@ export class AccountStore {
         x.provider ||= provider;
         if (e.email) x.email = e.email;
         if (e.email) x.displayName = e.email;
+        if (e.plan) x.plan = e.plan;
       }
       try {
         await this.writeSnapshot(x.id, { key, entry: e });
@@ -106,10 +161,10 @@ export class AccountStore {
     }
     r = r.filter(
       (item, index, all) =>
-        all.findIndex(
-          (other) =>
-            other.authEntryKey === item.authEntryKey &&
-            (other.userId || "") === (item.userId || ""),
+        all.findIndex((other) =>
+          item.userId && other.userId
+            ? other.userId === item.userId
+            : other.authEntryKey === item.authEntryKey,
         ) === index,
     );
     const active = findActiveFromAuth(a, r);
@@ -119,7 +174,13 @@ export class AccountStore {
   }
 }
 
-export function entryMeta(id: string, key: string, e: Json, active = false, provider = "default") {
+export function entryMeta(
+  id: string,
+  key: string,
+  e: Json,
+  active = false,
+  provider = "default",
+) {
   const exp = e.expires_at;
   const status =
     exp && !Number.isNaN(Date.parse(exp)) && Date.parse(exp) <= Date.now()

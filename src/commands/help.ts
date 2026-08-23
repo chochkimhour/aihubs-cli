@@ -2,28 +2,34 @@ import { VERSION } from "../constants.js";
 import type { CliContext } from "../context.js";
 
 export function printHelp(ctx: CliContext): void {
-  console.log(ctx.color("1;36", "\naihubs-cli — AI provider account manager\n"));
+  console.log(
+    ctx.color("1;36", "\naihubs-cli — AI provider account manager\n"),
+  );
   console.log(ctx.color("1;33", "USAGE"));
   console.log("  aihubs-cli <command> [options]\n");
   console.log(ctx.color("1;33", "ACCOUNT COMMANDS"));
-  console.log("  list [provider]              List accounts, optionally filtered by provider");
+  console.log(
+    "  list [provider]              List accounts, optionally filtered by provider",
+  );
   console.log(
     "  list --no-usage              List accounts without billing requests",
   );
-  console.log(
-    "  usage                        Show active provider credits",
-  );
+  console.log("  usage                        Show active provider credits");
   console.log("  current                      Show the active account");
   console.log(
     "  status                       Show authentication and CLI status",
   );
+  console.log("  login [provider]              Sign in through a provider");
   console.log(
-    "  login [provider] [--device-auth] Sign in through a provider",
+    "  switch [provider] <number|id|email|alias> Switch the active account",
   );
-  console.log("  switch [provider] <number|id|email|alias> Switch the active account");
-  console.log("                               Providers: codex, grok, kiro, opencode, claudecode, freebuff, deepseek, gemini, openrouter");
+  console.log(
+    "                               Providers: codex, grok, gemini, freebuff, claude",
+  );
   console.log("  resume [session-id|title]    Resume a provider session");
-  console.log("  session                      List available provider sessions");
+  console.log(
+    "  session                      List available provider sessions",
+  );
   console.log("  move <account> <top|bottom>  Move an account in the list");
   console.log(
     "  remove <account> [account ...] Remove one or more saved accounts",

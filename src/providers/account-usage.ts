@@ -19,11 +19,14 @@ export async function usageForAccount(
       "auth",
       "The selected Provider authentication is no longer valid.",
     );
+  const registryEntry = (await ctx.store.registry()).find(
+    (item) => item.id === id,
+  );
   return new ProviderUsageProvider({
     cacheDir: ctx.paths.usageCacheDir,
     cacheTtlMs: await usageCacheTtlMs(ctx.paths),
     providerVersion: await providerVersion(),
-  }).get(id, snap.entry, force);
+  }).get(id, snap.entry, force, registryEntry?.provider);
 }
 
 export async function enrichAccountsWithUsage(
@@ -35,8 +38,18 @@ export async function enrichAccountsWithUsage(
       try {
         const usage = await usageForAccount(ctx, account.id);
         return { ...account, ...usage };
-      } catch {
-        return { ...account, usageState: "unknown" };
+      } catch (error) {
+        return {
+          ...account,
+          usageState: "unknown",
+          errorStatus:
+            error instanceof ProviderUsageError
+              ? String(
+                  error.statusCode ||
+                    (error.kind === "auth" ? "AUTH" : "UNKNOWN"),
+                )
+              : "UNKNOWN",
+        };
       }
     }),
   );

@@ -7,106 +7,138 @@
 [![Multi-Provider](https://img.shields.io/badge/AI_Providers-Multi--Provider-111827)](https://github.com/chochkimhour/aihubs-cli)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
 
-`aihubs-cli` is a local multi-account manager for AI CLI providers. The current provider integration is the official configured provider CLI; provider-specific integrations live under `src/providers/` so additional providers can be added without treating provider as the application itself.
+`aihubs-cli` is a local multi-account manager for supported AI CLI providers.
+It stores account metadata locally, switches authentication files, and displays
+available usage information without printing credentials.
 
-It supports account listing, switching, aliases, import/export, status, usage, sessions, and safe multi-account removal. It does not provide universal login: each AI provider has its own authentication and usage APIs.
+Supported providers:
+
+- `codex`
+- `grok`
+- `gemini`
+- `freebuff`
+- `claude`
 
 ## Install
 
-Requirements: Node.js 20+, the configured provider CLI, and Windows, macOS, or Linux.
+Requirements: Node.js 20+, the CLI for the provider you want to use, and
+Windows, macOS, or Linux.
 
 ```powershell
-npm i aihubs-cli
-npx --no-install aihubs-cli --help
-```
-
-For global use:
-
-```powershell
-npm i -g aihubs-cli
+npm install -g aihubs-cli
 aihubs-cli --help
-provider --version
 ```
 
-## Commands
+The selected provider CLI must be installed and available on `PATH`.
+
+## Common commands
 
 ```powershell
-aihubs-cli list
-aihubs-cli list grok
-aihubs-cli list codex
-aihubs-cli current
-aihubs-cli status
-aihubs-cli switch codex 1
-aihubs-cli switch grok email@example.com
-aihubs-cli switch gemini personal
-aihubs-cli login
+# Sign in
 aihubs-cli login codex
 aihubs-cli login grok
-aihubs-cli login kiro
-aihubs-cli login opencode
-aihubs-cli login claudecode
-aihubs-cli login freebuff
-aihubs-cli login deepseek
 aihubs-cli login gemini
-aihubs-cli login openrouter
-aihubs-cli login --device-auth
-aihubs-cli switch 1
-aihubs-cli session
-aihubs-cli resume <session-id-or-title>
-aihubs-cli move 2 top
-aihubs-cli alias set 1 personal
-aihubs-cli reset set 1 2026-08-29T07:00:00+07:00
-aihubs-cli remove 1 --yes
-aihubs-cli clean
-aihubs-cli clean --backups --yes
-aihubs-cli repair
-aihubs-cli config
-aihubs-cli watch
-```
+aihubs-cli login freebuff
+aihubs-cli login claude
 
-Provider-aware switching works with all supported providers: `codex`, `grok`, `kiro`, `opencode`, `claudecode`, `freebuff`, `deepseek`, `gemini`, and `openrouter`.
-
-Accounts accept a row number, ID, email, or alias. Remove multiple accounts with spaces or commas:
-
-The account list includes a `PROVIDER` column. Filter it by provider when needed:
-
-```powershell
-aihubs-cli list grok
+# List accounts
+aihubs-cli list
 aihubs-cli list codex
-aihubs-cli list gemini
-```
+aihubs-cli list grok
 
-```powershell
-aihubs-cli remove 01 02 03 --yes
-aihubs-cli remove 01,02,03 --yes
-aihubs-cli remove personal other@example.com --yes
-```
+# Inspect and switch accounts
+aihubs-cli current
+aihubs-cli status
+aihubs-cli switch codex 01
+aihubs-cli switch grok user@example.com
+aihubs-cli switch 02
 
-`--yes` is required. All selectors are validated before deletion; duplicate selectors are ignored.
-
-## Import, export, and JSON
-
-```powershell
+# Manage accounts
+aihubs-cli alias set 01 personal
+aihubs-cli alias clear personal
+aihubs-cli remove 01 02 --yes
 aihubs-cli export accounts.json
-aihubs-cli export accounts.json --include-credentials --confirm-sensitive-export
 aihubs-cli import accounts.json
-aihubs-cli --json list
-aihubs-cli status --json
 ```
 
-JSON account records also include the `provider` field.
+Account selectors can be row numbers, account IDs, email addresses, or aliases.
+Use `aihubs-cli --help` for the complete command list.
 
-Metadata-only export is the default. Credential export contains sensitive authentication data. Normal JSON output never includes tokens, API keys, cookies, or authorization headers.
+## Account list
 
-## Provider support
+The human-readable list includes the row ID, provider, plan, short-window
+usage, weekly usage, and last activity:
 
-`aihubs-cli login` delegates authentication to the selected installed CLI. Supported provider names are `codex`, `grok`, `kiro`, `opencode`, `claudecode`, `freebuff`, `deepseek`, `gemini`, and `openrouter`. `claudecode` uses the `claude` executable; the other names use matching executable names. With no provider argument, it uses the configured default provider CLI.
+```text
+ ID   PROVIDER    ACCOUNT                         PLAN      5H USAGE                WEEKLY USAGE            LAST ACTIVITY
+-------------------------------------------------------------------------------------------------------------------------
+  01 codex       account@example.com             Go        9% (19:05 on Sep 22)    -                       Now
+  02 codex       another@example.com             Free      401                     -                       3h ago
+```
 
-## Storage and security
+For Codex accounts, usage is retrieved independently for every account from the
+authenticated Codex backend. The CLI reads the primary and secondary rate-limit
+windows and treats server-provided reset timestamps as authoritative.
 
-Provider credentials remain in the configured provider home. Manager metadata and protected snapshots are stored in the configured manager home. Set the provider and manager home environment variables to customize these locations. Never commit credentials, exports, or backups; see [SECURITY.md](SECURITY.md).
+Codex accounts are discovered from the active auth file and the per-account
+files in:
 
-Usage percentages are shown only when provider billing provides a real positive limit. `NO API LIMIT` means no monthly API limit is available, and `UNAVAILABLE` means billing could not be queried.
+```text
+~/.codex/accounts/*.auth.json
+```
+
+On Windows, `~` means the current user profile directory. A `401` or `403` in
+the usage column means that account needs authentication again; it is not a
+usage percentage. Missing secondary usage is displayed as `-`.
+
+## Provider login
+
+Login delegates to the selected provider CLI:
+
+```powershell
+aihubs-cli login <provider>
+```
+
+Freebuff login URLs open automatically in the default browser. Other providers
+use their own installed CLI login flow.
+
+## JSON output
+
+Use `--json` for scripts and integrations:
+
+```powershell
+aihubs-cli --json list
+aihubs-cli --json list codex
+aihubs-cli --json status
+```
+
+Normal JSON output redacts access tokens, refresh tokens, API keys, cookies,
+authorization headers, and other sensitive values. Credential export requires
+both explicit flags:
+
+```powershell
+aihubs-cli export accounts.json --include-credentials --confirm-sensitive-export
+```
+
+## Storage
+
+The manager stores registry metadata, protected account snapshots, usage cache,
+and backups in:
+
+```text
+~/.provider-auth
+```
+
+Provider authentication remains in the provider's own home. Override locations
+when needed:
+
+```powershell
+$env:PROVIDER_HOME = "D:\\path\\to\\provider-home"
+$env:PROVIDER_AUTH_HOME = "D:\\path\\to\\aihubs-auth"
+```
+
+Never commit authentication files, exports, backups, or tokens. See
+[SECURITY.md](SECURITY.md).
 
 ## Development
 
@@ -116,13 +148,32 @@ npm run build
 npm test
 ```
 
-Source is organized into `src/commands/`, `src/store.ts`, `src/providers/`, and `src/lib/`. GitHub Actions validates pushes and pull requests; tags matching `v*.*.*` publish to npm.
+TypeScript source is under `src/`, tests are under `test/`, and compiled files
+are written to `dist/`.
 
 ## Troubleshooting
 
-Confirm `provider --version` works, then run `aihubs-cli login`. If `provider` is not found, add it to `PATH` and open a new terminal. Use `aihubs-cli repair` after manually editing authentication files.
+Verify the provider CLI is installed and available on `PATH`:
 
-Uninstall with `npm uninstall aihubs-cli` or `npm uninstall -g aihubs-cli`.
+```powershell
+codex --version
+grok --version
+gemini --version
+freebuff --version
+claude --version
+```
+
+If a Codex account displays `401`, authenticate that account again:
+
+```powershell
+aihubs-cli login codex
+```
+
+When developing locally, run the local build directly:
+
+```powershell
+node .\\dist\\cli.js list
+```
 
 ## License
 

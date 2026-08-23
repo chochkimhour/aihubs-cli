@@ -7,6 +7,7 @@ import {
   ProviderUsageError,
   ProviderUsageProvider,
   mergeProviderUsage,
+  normalizeCodexUsage,
   normalizeProviderBilling,
 } from "../dist/providers/usage-provider.js";
 
@@ -83,6 +84,72 @@ test("supports missing usage and missing reset without inventing values", () => 
   );
 });
 
+test("normalizes Codex primary and weekly windows with Unix resets", () => {
+  const usage = normalizeCodexUsage({
+    plan_type: "plus",
+    rate_limit: {
+      primary_window: { used_percent: 98, reset_at: 1780122300 },
+      secondary_window: { used_percent: 40, reset_at: 1780125900 },
+    },
+  });
+  assert.equal(usage.plan, "plus");
+  assert.equal(usage.fiveHourUsage, "98%");
+  assert.equal(usage.weeklyUsage, "40%");
+  assert.match(usage.fiveHourResetAt, /2026/);
+  assert.match(usage.weeklyResetAt, /2026/);
+});
+
+test("supports zero, full, and missing secondary Codex usage", () => {
+  assert.equal(
+    normalizeCodexUsage({ rate_limit: { primary_window: { used_percent: 0 } } })
+      .fiveHourUsage,
+    "0%",
+  );
+  assert.equal(
+    normalizeCodexUsage({
+      rate_limit: { primary_window: { used_percent: 100 } },
+    }).fiveHourUsage,
+    "100%",
+  );
+  assert.equal(
+    normalizeCodexUsage({
+      rate_limit: { primary_window: { used_percent: 12 } },
+    }).weeklyUsage,
+    undefined,
+  );
+});
+
+test("fetches Codex usage with each account token and account id", async () => {
+  const seen = [];
+  const provider = new ProviderUsageProvider({
+    fetchImpl: async (url, init) => {
+      seen.push({ url: String(url), headers: init.headers });
+      return response(
+        200,
+        seen.length === 1
+          ? {
+              plan_type: "free",
+              rate_limit: {
+                primary_window: { used_percent: 10, reset_at: 1780122300 },
+              },
+            }
+          : { accounts: [{ id: "account-1", plan_type: "free" }] },
+      );
+    },
+  });
+  const usage = await provider.get(
+    "01",
+    { access_token: "token-1", account_id: "account-1" },
+    false,
+    "codex",
+  );
+  assert.equal(usage.plan, "free");
+  assert.equal(usage.fiveHourUsage, "10%");
+  assert.equal(seen[0].url, "https://chatgpt.com/backend-api/wham/usage");
+  assert.equal(seen[0].headers.Authorization, "Bearer token-1");
+  assert.equal(seen[0].headers["ChatGPT-Account-Id"], "account-1");
+});
+
 test("uses per-account auth, official URL/headers, and caches only normalized data", async () => {
   const cacheDir = await mkdtemp(path.join(tmpdir(), "provider-usage-"));
   let calls = 0;
@@ -120,13 +187,18 @@ test("uses per-account auth, official URL/headers, and caches only normalized da
   assert.equal(calls, 2);
   assert.equal(seen.url, "https://mock.test/v1/billing");
   assert.equal(seen.init.headers.Authorization, "Bearer fake-secret");
-  assert.equal(seen.init.headers["x-provider-client-version"], "provider 1.0.5");
+  assert.equal(
+    seen.init.headers["x-provider-client-version"],
+    "provider 1.0.5",
+  );
   assert.equal(seen.init.headers["x-provider-client-mode"], "interactive");
 });
 
 test("classifies auth, server, and malformed responses safely", async () => {
   for (const [status, kind] of [
     [401, "auth"],
+    [403, "auth"],
+    [429, "unavailable"],
     [500, "unavailable"],
   ]) {
     const provider = new ProviderUsageProvider({
@@ -137,11 +209,33 @@ test("classifies auth, server, and malformed responses safely", async () => {
       (error) => error instanceof ProviderUsageError && error.kind === kind,
     );
   }
+  for (const [status, expected] of [
+    [401, 401],
+    [403, 403],
+    [429, 429],
+    [500, 500],
+  ]) {
+    const provider = new ProviderUsageProvider({
+      fetchImpl: async () => response(status, {}),
+    });
+    await assert.rejects(
+      () =>
+        provider.get(
+          "01",
+          { access_token: "fake", account_id: "u" },
+          false,
+          "codex",
+        ),
+      (error) =>
+        error instanceof ProviderUsageError && error.statusCode === expected,
+    );
+  }
   const provider = new ProviderUsageProvider({
     fetchImpl: async () => response(200, "invalid"),
   });
   await assert.rejects(
     () => provider.get("01", { key: "fake", user_id: "u" }),
-    (error) => error instanceof ProviderUsageError && error.kind === "unsupported",
+    (error) =>
+      error instanceof ProviderUsageError && error.kind === "unsupported",
   );
 });

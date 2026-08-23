@@ -23,23 +23,19 @@ export const SENSITIVE_KEY =
   /key|token|cookie|authorization|secret|password|api[_-]?key/i;
 export const DEFAULT_USAGE_CACHE_TTL_MS = 45_000;
 export function providerNotFoundMessage(command: string): string {
-  return `Provider CLI '${command}' was not found in PATH. Install that provider CLI, then verify it with '${command} --version'. You can choose a provider with 'aihubs-cli login <provider>' (for example: codex, grok, kiro, gemini, or openrouter).`;
+  return `Provider CLI '${command}' was not found in PATH. Install the selected provider CLI, then verify it with '${command} --version'.`;
 }
 // Override this during local development to point at a mock or installed provider CLI.
 export const PROVIDER_COMMAND =
   process.env.AIHUBS_PROVIDER_COMMAND ||
-  (process.platform === "win32" ? "provider.exe" : "provider");
+  (process.platform === "win32" ? "codex.cmd" : "codex");
 
 export const PROVIDER_COMMANDS: Record<string, string> = {
   codex: process.platform === "win32" ? "codex.cmd" : "codex",
   grok: process.platform === "win32" ? "grok.cmd" : "grok",
-  kiro: process.platform === "win32" ? "kiro-cli.cmd" : "kiro-cli",
-  opencode: process.platform === "win32" ? "opencode.cmd" : "opencode",
-  claudecode: process.platform === "win32" ? "claude.cmd" : "claude",
-  freebuff: process.platform === "win32" ? "freebuff.cmd" : "freebuff",
-  deepseek: process.platform === "win32" ? "deepseek.cmd" : "deepseek",
   gemini: process.platform === "win32" ? "gemini.cmd" : "gemini",
-  openrouter: process.platform === "win32" ? "openrouter.cmd" : "openrouter",
+  freebuff: process.platform === "win32" ? "freebuff.cmd" : "freebuff",
+  claude: process.platform === "win32" ? "claude.cmd" : "claude",
 };
 
 export const GLOBAL_FLAGS = new Set([

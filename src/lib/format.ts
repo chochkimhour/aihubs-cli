@@ -71,47 +71,85 @@ export function formatUsageUsed(account: Json): string {
   return "Unknown";
 }
 
+function formatCompactReset(value: unknown): string {
+  if (!value) return "-";
+  const date = new Date(String(value));
+  if (Number.isNaN(date.getTime())) return String(value).slice(0, 18);
+  const time = date.toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+  const day = date.toLocaleDateString("en-US", {
+    day: "numeric",
+    month: "short",
+  });
+  return `${time} on ${day}`;
+}
+
+function formatPlan(value: unknown): string {
+  const plan = String(value || "Unknown");
+  if (plan === "Unknown") return plan;
+  const labels: Record<string, string> = {
+    go: "Go",
+    free: "Free",
+    plus: "Plus",
+    pro: "Pro",
+    team: "Team",
+    business: "Business",
+    enterprise: "Enterprise",
+  };
+  return labels[plan.toLowerCase()] || plan[0].toUpperCase() + plan.slice(1);
+}
+
 export function printAccountTable(
   ctx: CliContext,
   accounts: Json[],
   active?: string,
 ): void {
   const header =
-    "    ID  " +
+    " ID  ".padEnd(6) +
     "PROVIDER".padEnd(12) +
-    "ACCOUNT".padEnd(30) +
-    "STATUS".padEnd(10) +
-    "LAST SELECTED".padEnd(16) +
-    "USAGE".padEnd(12) +
-    "RESET AT";
-  console.log(
-    ctx.color("1;36", header),
-  );
-  console.log(
-    "------------------------------------------------------------------------------------------------",
-  );
+    "ACCOUNT".padEnd(32) +
+    "PLAN".padEnd(10) +
+    "5H USAGE".padEnd(24) +
+    "WEEKLY USAGE".padEnd(24) +
+    "LAST ACTIVITY";
+  console.log(ctx.color("1;36", header));
+  console.log("-".repeat(header.length));
   for (const [index, account] of accounts.entries()) {
     const marker = account.id === active ? "*" : " ";
     const number = String(index + 1).padStart(2, "0");
-    const name = String(account.email || account.displayName || account.id)
-      .slice(0, 29)
-      .padEnd(30);
-    const provider = String(account.provider || "default")
+    const provider = String(account.provider || "-")
       .slice(0, 11)
       .padEnd(12);
-    const status = String(account.status || "-").toLowerCase();
-    const statusLabel = (
-      status === "-" ? status : status[0].toUpperCase() + status.slice(1)
-    ).padEnd(10);
-    const last = formatLastActivity(account).padEnd(16);
-    const tokenLeft = formatUsageUsed(account).padEnd(12);
-    const reset = formatResetDate(
-      account.resetAt ||
-        account.usageResetAt ||
-        account.manualResetAt ||
-        account.resetIn,
+    const name = String(account.email || account.displayName || account.id)
+      .slice(0, 31)
+      .padEnd(32);
+    const plan = formatPlan(account.plan || account.subscriptionTier).padEnd(
+      10,
     );
-    const row = `${marker} ${number}  ${provider}${name}${statusLabel}${last}${tokenLeft}${reset}`;
+    const fiveHour =
+      account.errorStatus ||
+      String(
+        account.fiveHourUsage || account.usage5h || formatUsageUsed(account),
+      );
+    const reset = formatCompactReset(
+      account.fiveHourResetAt ||
+        account.resetAt ||
+        account.usageResetAt ||
+        account.manualResetAt,
+    );
+    const fiveHourCell = `${fiveHour}${reset === "-" ? "" : ` (${reset})`}`
+      .slice(0, 23)
+      .padEnd(24);
+    const weeklyReset = formatCompactReset(account.weeklyResetAt);
+    const weekly =
+      `${account.weeklyUsage || account.weekly || "-"}${weeklyReset === "-" ? "" : ` (${weeklyReset})`}`
+        .slice(0, 23)
+        .padEnd(24);
+    const last = formatLastActivity(account);
+    const row = `${marker} ${number} ${provider}${name}${plan}${fiveHourCell}${weekly}${last}`;
     console.log(account.id === active ? ctx.color("1;32", row) : row);
   }
   console.log(

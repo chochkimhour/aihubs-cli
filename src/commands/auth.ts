@@ -6,11 +6,23 @@ import type { CliContext } from "../context.js";
 
 export async function loginCommand(ctx: CliContext): Promise<void> {
   const extra = ctx.commandArgs();
-  const providerName = extra[0] && !extra[0].startsWith("--") ? extra[0].toLowerCase() : undefined;
-  const providerCommand = providerName ? PROVIDER_COMMANDS[providerName] : undefined;
+  const providerName =
+    extra[0] && !extra[0].startsWith("--") ? extra[0].toLowerCase() : undefined;
+  if (providerName && !PROVIDER_COMMANDS[providerName])
+    ctx.fail(
+      "UNKNOWN_PROVIDER",
+      `Unknown provider '${extra[0]}'. Supported providers: ${Object.keys(PROVIDER_COMMANDS).join(", ")}.`,
+    );
+  const providerCommand = providerName
+    ? PROVIDER_COMMANDS[providerName]
+    : undefined;
   if (providerName && !providerCommand)
-    ctx.fail("UNKNOWN_PROVIDER", `Unknown provider '${extra[0]}'. Supported providers: ${Object.keys(PROVIDER_COMMANDS).join(", ")}.`);
-  if (await exists(ctx.paths.authFile)) await ctx.store.sync(false, providerName || "default");
+    ctx.fail(
+      "UNKNOWN_PROVIDER",
+      `Unknown provider '${extra[0]}'. Supported providers: ${Object.keys(PROVIDER_COMMANDS).join(", ")}.`,
+    );
+  if (await exists(ctx.paths.authFile))
+    await ctx.store.sync(false, providerName || "default");
   const loginArgs = providerCommand ? extra.slice(1) : extra;
   const supported = loginArgs.length
     ? ["--device-auth", "--device-code", "--oauth"].includes(loginArgs[0])
