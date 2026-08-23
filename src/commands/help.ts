@@ -6,7 +6,7 @@ export function printHelp(ctx: CliContext): void {
   console.log(ctx.color("1;33", "USAGE"));
   console.log("  aihubs-cli <command> [options]\n");
   console.log(ctx.color("1;33", "ACCOUNT COMMANDS"));
-  console.log("  list                         List saved provider accounts");
+  console.log("  list [provider]              List accounts, optionally filtered by provider");
   console.log(
     "  list --no-usage              List accounts without billing requests",
   );
@@ -18,7 +18,7 @@ export function printHelp(ctx: CliContext): void {
     "  status                       Show authentication and CLI status",
   );
   console.log(
-    "  login [--device-auth]        Sign in through the configured provider",
+    "  login [provider] [--device-auth] Sign in through a provider",
   );
   console.log("  switch <number|id|email|alias> Switch the active account");
   console.log("  resume [session-id|title]    Resume a provider session");

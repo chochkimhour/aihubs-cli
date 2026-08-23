@@ -79,7 +79,7 @@ export function printAccountTable(
   console.log(
     ctx.color(
       "1;36",
-      "     ID  ACCOUNT                       AUTH   STATUS   LAST SELECTED   USAGE        RESET AT",
+      "     ID  PROVIDER     ACCOUNT                       AUTH   STATUS   LAST SELECTED   USAGE        RESET AT",
     ),
   );
   console.log(
@@ -91,6 +91,7 @@ export function printAccountTable(
     const name = String(
       account.email || account.displayName || account.id,
     ).padEnd(29);
+    const provider = String(account.provider || "default").padEnd(12);
     const authMode = String(account.authMode || "-")
       .toUpperCase()
       .padEnd(7);
@@ -106,7 +107,7 @@ export function printAccountTable(
         account.manualResetAt ||
         account.resetIn,
     );
-    const row = `${marker} ${number} ${name} ${authMode}${statusLabel}${last}${tokenLeft} ${reset}`;
+    const row = `${marker} ${number} ${provider} ${name} ${authMode}${statusLabel}${last}${tokenLeft} ${reset}`;
     console.log(account.id === active ? ctx.color("1;32", row) : row);
   }
   console.log(

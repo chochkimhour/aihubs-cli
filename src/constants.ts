@@ -29,6 +29,18 @@ export const PROVIDER_COMMAND =
   process.env.AIHUBS_PROVIDER_COMMAND ||
   (process.platform === "win32" ? "provider.exe" : "provider");
 
+export const PROVIDER_COMMANDS: Record<string, string> = {
+  codex: process.platform === "win32" ? "codex.cmd" : "codex",
+  grok: process.platform === "win32" ? "grok.cmd" : "grok",
+  kiro: process.platform === "win32" ? "kiro-cli.cmd" : "kiro-cli",
+  opencode: process.platform === "win32" ? "opencode.cmd" : "opencode",
+  claudecode: process.platform === "win32" ? "claude.cmd" : "claude",
+  freebuff: process.platform === "win32" ? "freebuff.cmd" : "freebuff",
+  deepseek: process.platform === "win32" ? "deepseek.cmd" : "deepseek",
+  gemini: process.platform === "win32" ? "gemini.cmd" : "gemini",
+  openrouter: process.platform === "win32" ? "openrouter.cmd" : "openrouter",
+};
+
 export const GLOBAL_FLAGS = new Set([
   "--json",
   "--yes",

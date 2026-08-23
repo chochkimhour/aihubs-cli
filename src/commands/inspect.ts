@@ -5,8 +5,9 @@ import { enrichAccountsWithUsage } from "../providers/account-usage.js";
 import type { CliContext } from "../context.js";
 
 export async function listCommand(ctx: CliContext): Promise<void> {
+  const provider = ctx.commandArgs()[0]?.toLowerCase();
   const { a, r } = await ctx.store.sync(true);
-  const accounts = withActiveFlags(a, r);
+  const accounts = withActiveFlags(a, provider ? r.filter((item) => item.provider === provider) : r);
   const active = (accounts.find((item) => item.active) as any)?.id;
   const listed = ctx.hasFlag("--no-usage")
     ? accounts

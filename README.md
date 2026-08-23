@@ -25,9 +25,20 @@ provider --version
 
 ```powershell
 aihubs-cli list
+aihubs-cli list grok
+aihubs-cli list codex
 aihubs-cli current
 aihubs-cli status
 aihubs-cli login
+aihubs-cli login codex
+aihubs-cli login grok
+aihubs-cli login kiro
+aihubs-cli login opencode
+aihubs-cli login claudecode
+aihubs-cli login freebuff
+aihubs-cli login deepseek
+aihubs-cli login gemini
+aihubs-cli login openrouter
 aihubs-cli login --device-auth
 aihubs-cli switch 1
 aihubs-cli session
@@ -44,6 +55,14 @@ aihubs-cli watch
 ```
 
 Accounts accept a row number, ID, email, or alias. Remove multiple accounts with spaces or commas:
+
+The account list includes a `PROVIDER` column. Filter it by provider when needed:
+
+```powershell
+aihubs-cli list grok
+aihubs-cli list codex
+aihubs-cli list gemini
+```
 
 ```powershell
 aihubs-cli remove 01 02 03 --yes
@@ -63,11 +82,13 @@ aihubs-cli --json list
 aihubs-cli status --json
 ```
 
+JSON account records also include the `provider` field.
+
 Metadata-only export is the default. Credential export contains sensitive authentication data. Normal JSON output never includes tokens, API keys, cookies, or authorization headers.
 
 ## Provider support
 
-The current provider is supported. `aihubs-cli login` delegates authentication to the installed official `provider` CLI. OpenAI, Claude, Gemini, Kiro, and other services require separate adapters for their supported login, account, status, and usage interfaces; no safe universal login exists for every provider.
+`aihubs-cli login` delegates authentication to the selected installed CLI. Supported provider names are `codex`, `grok`, `kiro`, `opencode`, `claudecode`, `freebuff`, `deepseek`, `gemini`, and `openrouter`. `claudecode` uses the `claude` executable; the other names use matching executable names. With no provider argument, it uses the configured default provider CLI.
 
 ## Storage and security
 

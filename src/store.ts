@@ -44,7 +44,7 @@ export class AccountStore {
     await fs.rm(snapshotPath(this.paths, accountId), { force: true });
   }
 
-  async sync(allowStoredAccounts = false): Promise<{ a: Json; r: Json[] }> {
+  async sync(allowStoredAccounts = false, provider = "default"): Promise<{ a: Json; r: Json[] }> {
     await this.ensure();
     let a: Json;
     let r = await this.registry();
@@ -72,7 +72,7 @@ export class AccountStore {
       );
       if (!x) {
         const id = crypto.randomUUID();
-        x = { ...entryMeta(id, key, e) };
+        x = { ...entryMeta(id, key, e, false, provider) };
         r.push(x);
       }
       await this.writeSnapshot(x.id, { key, entry: e });
@@ -92,7 +92,7 @@ export class AccountStore {
   }
 }
 
-export function entryMeta(id: string, key: string, e: Json, active = false) {
+export function entryMeta(id: string, key: string, e: Json, active = false, provider = "default") {
   const exp = e.expires_at;
   const status =
     exp && !Number.isNaN(Date.parse(exp)) && Date.parse(exp) <= Date.now()
@@ -100,6 +100,7 @@ export function entryMeta(id: string, key: string, e: Json, active = false) {
       : "VALID";
   return {
     id,
+    provider,
     alias: e.alias ?? undefined,
     email: e.email,
     displayName:

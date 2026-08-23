@@ -1,21 +1,28 @@
 import { exists } from "../lib/json.js";
 import { findActiveFromAuth } from "../store.js";
 import { runProvider } from "../providers/spawn.js";
+import { PROVIDER_COMMANDS } from "../constants.js";
 import type { CliContext } from "../context.js";
 
 export async function loginCommand(ctx: CliContext): Promise<void> {
-  if (await exists(ctx.paths.authFile)) await ctx.store.sync();
   const extra = ctx.commandArgs();
-  const supported = extra.length
-    ? ["--device-auth", "--device-code", "--oauth"].includes(extra[0])
+  const providerName = extra[0] && !extra[0].startsWith("--") ? extra[0].toLowerCase() : undefined;
+  const providerCommand = providerName ? PROVIDER_COMMANDS[providerName] : undefined;
+  if (providerName && !providerCommand)
+    ctx.fail("UNKNOWN_PROVIDER", `Unknown provider '${extra[0]}'. Supported providers: ${Object.keys(PROVIDER_COMMANDS).join(", ")}.`);
+  if (await exists(ctx.paths.authFile)) await ctx.store.sync(false, providerName || "default");
+  const loginArgs = providerCommand ? extra.slice(1) : extra;
+  const supported = loginArgs.length
+    ? ["--device-auth", "--device-code", "--oauth"].includes(loginArgs[0])
     : true;
   if (!supported)
-    ctx.fail("UNSUPPORTED_FLAG", `Unsupported login flag '${extra[0]}'.`);
+    ctx.fail("UNSUPPORTED_FLAG", `Unsupported login flag '${loginArgs[0]}'.`);
   await runProvider(
-    ["login", ...extra],
+    ["login", ...loginArgs],
     (code) => `provider login exited with code ${code}`,
+    providerCommand,
   );
-  const { a, r } = await ctx.store.sync();
+  const { a, r } = await ctx.store.sync(false, providerName || "default");
   const active = findActiveFromAuth(a, r);
   if (active) {
     active.lastUsedAt = new Date().toISOString();

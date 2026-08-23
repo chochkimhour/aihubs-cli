@@ -1,10 +1,10 @@
 import { spawn, type SpawnOptions } from "node:child_process";
 import { PROVIDER_COMMAND, PROVIDER_NOT_FOUND } from "../constants.js";
 
-export function spawnProvider(argv: string[], options: SpawnOptions = {}) {
+export function spawnProvider(argv: string[], options: SpawnOptions = {}, command = PROVIDER_COMMAND) {
   const useShell =
-    process.platform === "win32" && /\.(cmd|bat)$/i.test(PROVIDER_COMMAND);
-  return spawn(PROVIDER_COMMAND, argv, { ...options, shell: options.shell ?? useShell });
+    process.platform === "win32" && /\.(cmd|bat)$/i.test(command);
+  return spawn(command, argv, { ...options, shell: options.shell ?? useShell });
 }
 
 export async function providerVersion(): Promise<string> {
@@ -24,8 +24,9 @@ export async function providerVersion(): Promise<string> {
 export function runProvider(
   argv: string[],
   failMessage: (code: number | null) => string,
+  command = PROVIDER_COMMAND,
 ): Promise<void> {
-  const child = spawnProvider(argv, { stdio: "inherit" });
+  const child = spawnProvider(argv, { stdio: "inherit" }, command);
   return new Promise((resolve, reject) => {
     child.on("close", (code) =>
       code === 0 ? resolve() : reject(new Error(failMessage(code))),
