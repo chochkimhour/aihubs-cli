@@ -22,7 +22,7 @@ export async function usageCommand(ctx: CliContext): Promise<void> {
         );
       if (error.kind === "auth") {
         console.error(
-          "✗ Unable to fetch provider usage.\n\nThe selected Provider authentication is no longer valid.\nRun:\n\nvibecode-cli login",
+          "✗ Unable to fetch provider usage.\n\nThe selected Provider authentication is no longer valid.\nRun:\n\naihubs-cli login",
         );
       } else if (error.kind === "unsupported")
         console.error(

@@ -30,14 +30,14 @@ test("shows help and version", async () => {
   const version = await invoke(["--version"]);
   assert.match(
     version.stdout,
-    new RegExp(`vibecode-cli ${pkg.version.replaceAll(".", "\\.")}`),
+    new RegExp(`aihubs-cli ${pkg.version.replaceAll(".", "\\.")}`),
   );
   const help = await invoke(["--help"]);
   assert.match(help.stdout, /ACCOUNT COMMANDS/);
   const dashboard = await invoke([]);
   assert.match(
     dashboard.stdout,
-    new RegExp(`Welcome to vibecode-cli v${pkg.version.replaceAll(".", "\\.")}`),
+    new RegExp(`Welcome to aihubs-cli v${pkg.version.replaceAll(".", "\\.")}`),
   );
 });
 

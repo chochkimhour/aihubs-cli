@@ -26,7 +26,7 @@ export const PROVIDER_NOT_FOUND =
   "Provider CLI was not found. Install provider and ensure `provider` is in PATH.";
 // Override this during local development to point at a mock or installed provider CLI.
 export const PROVIDER_COMMAND =
-  process.env.VIBECODE_PROVIDER_COMMAND ||
+  process.env.AIHUBS_PROVIDER_COMMAND ||
   (process.platform === "win32" ? "provider.exe" : "provider");
 
 export const GLOBAL_FLAGS = new Set([

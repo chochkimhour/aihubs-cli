@@ -2,9 +2,9 @@ import { VERSION } from "../constants.js";
 import type { CliContext } from "../context.js";
 
 export function printHelp(ctx: CliContext): void {
-  console.log(ctx.color("1;36", "\nvibecode-cli — AI provider account manager\n"));
+  console.log(ctx.color("1;36", "\naihubs-cli — AI provider account manager\n"));
   console.log(ctx.color("1;33", "USAGE"));
-  console.log("  vibecode-cli <command> [options]\n");
+  console.log("  aihubs-cli <command> [options]\n");
   console.log(ctx.color("1;33", "ACCOUNT COMMANDS"));
   console.log("  list                         List saved provider accounts");
   console.log(
@@ -65,26 +65,26 @@ export function printWelcome(ctx: CliContext): void {
     ctx.color(
       "38;5;208",
       `
-██╗   ██╗██╗██████╗ ███████╗ ██████╗ ██████╗ ██████╗ ███████╗
-██║   ██║██║██╔══██╗██╔════╝██╔════╝██╔═══██╗██╔══██╗██╔════╝
-██║   ██║██║██████╔╝█████╗  ██║     ██║   ██║██║  ██║█████╗  
-╚██╗ ██╔╝██║██╔══██╗██╔══╝  ██║     ██║   ██║██║  ██║██╔══╝  
- ╚████╔╝ ██║██████╔╝███████╗╚██████╗╚██████╔╝██████╔╝███████╗
-  ╚═══╝  ╚═╝╚═════╝ ╚══════╝ ╚═════╝ ╚═════╝ ╚═════╝ ╚══════╝
-                         ──  C L I  ──
+    █████╗ ██╗██╗  ██╗██╗   ██╗██████╗ ███████╗
+   ██╔══██╗██║██║  ██║██║   ██║██╔══██╗██╔════╝
+   ███████║██║███████║██║   ██║██████╔╝███████╗
+   ██╔══██║██║██╔══██║██║   ██║██╔══██╗╚════██║
+   ██║  ██║██║██║  ██║╚██████╔╝██████╔╝███████║
+   ╚═╝  ╚═╝╚═╝╚═╝  ╚═╝ ╚═════╝ ╚═════╝ ╚══════╝
+                 ──  C L I  ──
 `,
     ),
   );
-  console.log(ctx.color("1;32", `  Welcome to vibecode-cli v${VERSION}`));
+  console.log(ctx.color("1;32", `  Welcome to aihubs-cli v${VERSION}`));
   console.log(
     "  A simple local manager for your AI provider accounts and sessions.\n",
   );
   console.log(ctx.color("1;33", "  GET STARTED"));
-  console.log("  vibecode-cli login             Sign in and save an account");
-  console.log("  vibecode-cli list              View your saved accounts");
-  console.log("  vibecode-cli switch <account>  Change the active account");
-  console.log("  vibecode-cli status            Check authentication status\n");
+  console.log("  aihubs-cli login             Sign in and save an account");
+  console.log("  aihubs-cli list              View your saved accounts");
+  console.log("  aihubs-cli switch <account>  Change the active account");
+  console.log("  aihubs-cli status            Check authentication status\n");
   console.log(
-    ctx.color("1;90", "  Run vibecode-cli --help for all commands and options."),
+    ctx.color("1;90", "  Run aihubs-cli --help for all commands and options."),
   );
 }

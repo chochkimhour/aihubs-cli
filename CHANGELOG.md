@@ -8,7 +8,7 @@ Split the CLI from a single `src/cli.ts` into a standard TypeScript layout: thin
 
 ## 1.2.0
 
-Renamed the package and command to `vibecode-cli` and prepared the project for provider-specific AI integrations.
+Renamed the package and command to `aihubs-cli` and prepared the project for provider-specific AI integrations.
 
 ## 1.0.0
 

@@ -1,9 +1,9 @@
 {
-  "name": "vibecode-cli",
+  "name": "aihubs-cli",
   "version": "1.2.0",
   "description": "Local multi-account manager for AI CLI providers",
   "keywords": [
-    "vibecode-cli",
+    "aihubs-cli",
     "ai-providers",
     "ai",
     "cli",
@@ -19,7 +19,7 @@
   ],
   "type": "module",
   "bin": {
-    "vibecode-cli": "dist/cli.js"
+    "aihubs-cli": "dist/cli.js"
   },
   "scripts": {
     "build": "tsc",
@@ -48,6 +48,6 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/chochkimhour/vibecode-cli"
+    "url": "git+https://github.com/chochkimhour/aihubs-cli.git"
   }
 }
