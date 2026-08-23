@@ -22,8 +22,9 @@
   },
   "scripts": {
     "build": "tsc",
-    "test": "node --test test/cli.test.js test/usage-provider.test.js",
-    "format": "prettier --check ."
+    "test": "node --test test/*.test.js",
+    "format": "prettier --check .",
+    "format:write": "prettier --write src test"
   },
   "engines": {
     "node": ">=20"

@@ -5,20 +5,39 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { parseUsage, formatTokenLeft, formatResetAt, formatLastActivity } from "../dist/cli.js";
+import { readFileSync } from "node:fs";
+import { parseUsage } from "../dist/grok/billing.js";
+import {
+  formatTokenLeft,
+  formatResetAt,
+  formatLastActivity,
+} from "../dist/lib/format.js";
 
 const run = promisify(execFile);
 const cli = path.resolve("dist", "cli.js");
 
 async function invoke(args, env) {
-  return run(process.execPath, [cli, ...args], { env: { ...process.env, ...env } });
+  return run(process.execPath, [cli, ...args], {
+    env: { ...process.env, ...env },
+  });
 }
 
 test("shows help and version", async () => {
+  const pkg = JSON.parse(
+    readFileSync(new URL("../package.json", import.meta.url), "utf8"),
+  );
   const version = await invoke(["--version"]);
-  assert.match(version.stdout, /grok-cli 1\.0\.0/);
+  assert.match(
+    version.stdout,
+    new RegExp(`grok-cli ${pkg.version.replaceAll(".", "\\.")}`),
+  );
   const help = await invoke(["--help"]);
   assert.match(help.stdout, /ACCOUNT COMMANDS/);
+  const dashboard = await invoke([]);
+  assert.match(
+    dashboard.stdout,
+    new RegExp(`Welcome to grok-cli v${pkg.version.replaceAll(".", "\\.")}`),
+  );
 });
 
 test("lists an empty isolated account store as JSON", async () => {
@@ -37,8 +56,16 @@ test("redacts credentials in metadata export", async () => {
   const grok = path.join(root, "grok");
   const manager = path.join(root, "manager");
   await mkdir(grok, { recursive: true });
-  await writeFile(path.join(grok, "auth.json"), JSON.stringify({ user: { email: "a@example.com", access_token: "secret" } }));
-  const result = await invoke(["--json", "export", path.join(root, "out.json")], { GROK_HOME: grok, GROK_AUTH_HOME: manager });
+  await writeFile(
+    path.join(grok, "auth.json"),
+    JSON.stringify({
+      user: { email: "a@example.com", access_token: "secret" },
+    }),
+  );
+  const result = await invoke(
+    ["--json", "export", path.join(root, "out.json")],
+    { GROK_HOME: grok, GROK_AUTH_HOME: manager },
+  );
   assert.equal(JSON.parse(result.stdout).metadataOnly, true);
 });
 
@@ -91,11 +118,28 @@ test("saves and clears a manual reset time", async () => {
   const grok = path.join(root, "grok");
   const manager = path.join(root, "manager");
   await mkdir(grok, { recursive: true });
-  await writeFile(path.join(grok, "auth.json"), JSON.stringify({ user: { email: "a@example.com", user_id: "user", access_token: "secret" } }));
-  const set = await invoke(["--json", "reset", "set", "1", "2026-08-29T07:00:00+07:00"], { GROK_HOME: grok, GROK_AUTH_HOME: manager });
+  await writeFile(
+    path.join(grok, "auth.json"),
+    JSON.stringify({
+      user: { email: "a@example.com", user_id: "user", access_token: "secret" },
+    }),
+  );
+  const set = await invoke(
+    ["--json", "reset", "set", "1", "2026-08-29T07:00:00+07:00"],
+    { GROK_HOME: grok, GROK_AUTH_HOME: manager },
+  );
   assert.equal(JSON.parse(set.stdout).success, true);
-  const list = await invoke(["--json", "list"], { GROK_HOME: grok, GROK_AUTH_HOME: manager });
-  assert.match(JSON.parse(list.stdout).accounts[0].manualResetAt, /^2026-08-29T00:00:00\.000Z$/);
-  const clear = await invoke(["--json", "reset", "clear", "1"], { GROK_HOME: grok, GROK_AUTH_HOME: manager });
+  const list = await invoke(["--json", "list"], {
+    GROK_HOME: grok,
+    GROK_AUTH_HOME: manager,
+  });
+  assert.match(
+    JSON.parse(list.stdout).accounts[0].manualResetAt,
+    /^2026-08-29T00:00:00\.000Z$/,
+  );
+  const clear = await invoke(["--json", "reset", "clear", "1"], {
+    GROK_HOME: grok,
+    GROK_AUTH_HOME: manager,
+  });
   assert.equal(JSON.parse(clear.stdout).resetAt, null);
 });

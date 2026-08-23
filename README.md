@@ -23,6 +23,15 @@ grok-cli --help
 grok --version
 ```
 
+For a project-local install, npm does not add the command to your global
+`PATH`. Run it through `npx` (or `npm exec`) instead:
+
+```powershell
+npm install @chochkimhour/grok-cli
+npx --no-install grok-cli --help
+npm exec -- grok-cli list
+```
+
 Development install:
 
 ```powershell
@@ -64,7 +73,7 @@ Accounts can be selected by row number, ID, email, or alias. Use `move <account>
 ```powershell
 grok-cli export accounts.json
 grok-cli export accounts.json --include-credentials --confirm-sensitive-export
-grok-auth import accounts.json
+grok-cli import accounts.json
 ```
 
 Metadata-only export is the default. Credential export requires `--include-credentials --confirm-sensitive-export` and contains sensitive live authentication data.
@@ -104,6 +113,20 @@ npm install
 npm run build
 npm test
 ```
+
+Source layout:
+
+```text
+src/cli.ts              Entry point (bin)
+src/app.ts              Command dispatch
+src/context.ts          Parsed flags, paths, output helpers
+src/store.ts            Registry, auth.json sync, account lookup
+src/commands/           One module per command group
+src/grok/               Official Grok CLI and billing integration
+src/lib/                Formatting, JSON I/O, redaction
+```
+
+`src/cli.ts` stays thin. Command behavior lives in `src/commands/`; shared account state lives in `src/store.ts`.
 
 GitHub Actions validates pushes and pull requests. Tags matching `v*.*.*` run the npm publish workflow. Configure the repository secret `NPM_TOKEN` before publishing.
 
