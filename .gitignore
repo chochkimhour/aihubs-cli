@@ -10,10 +10,19 @@ coverage/
 # Local credentials and account-manager state
 .provider/
 .provider-auth/
+.codex/
+.grok/
+.gemini/
+.freebuff/
+.claude/
 auth.json
 registry.json
 accounts/
 backups/
+*.auth.json
+*.auth.json.*
+*.bak
+*.bak.*
 
 # Package artifacts
 *.tgz

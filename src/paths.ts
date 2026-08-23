@@ -12,13 +12,21 @@ export interface AppPaths {
   backupsDir: string;
 }
 
-export function resolvePaths(provider = "default", env: NodeJS.ProcessEnv = process.env): AppPaths {
+export function resolvePaths(
+  provider = "default",
+  env: NodeJS.ProcessEnv = process.env,
+): AppPaths {
   const homes: Record<string, string> = {
     codex: path.join(homedir(), ".codex"),
     claude: path.join(homedir(), ".claude"),
+    grok: path.join(homedir(), ".grok"),
+    gemini: path.join(homedir(), ".gemini"),
+    freebuff: path.join(homedir(), ".freebuff"),
   };
-  const providerHome = env.PROVIDER_HOME || homes[provider] || path.join(homedir(), ".provider");
-  const managerHome = env.PROVIDER_AUTH_HOME || path.join(homedir(), ".provider-auth");
+  const providerHome =
+    env.PROVIDER_HOME || homes[provider] || path.join(homedir(), ".provider");
+  const managerHome =
+    env.PROVIDER_AUTH_HOME || path.join(homedir(), ".provider-auth");
   return {
     providerHome,
     managerHome,
