@@ -14,10 +14,10 @@ export function printHelp(ctx: CliContext): void {
   console.log(
     "  list --no-usage              List accounts without billing requests",
   );
-  console.log("  usage                        Show active provider credits");
-  console.log("  current                      Show the active account");
+  console.log("  usage [provider]             Show provider credits");
+  console.log("  current [provider]           Show the active account");
   console.log(
-    "  status                       Show authentication and CLI status",
+    "  status [provider]            Show authentication and CLI status",
   );
   console.log("  login [provider]              Sign in through a provider");
   console.log(
@@ -26,9 +26,9 @@ export function printHelp(ctx: CliContext): void {
   console.log(
     "                               Providers: codex, grok, gemini, freebuff, claude",
   );
-  console.log("  resume [session-id|title]    Resume a provider session");
+  console.log("  resume [provider] [session]  Resume a provider session");
   console.log(
-    "  session                      List available provider sessions",
+    "  session [provider]           List available provider sessions",
   );
   console.log("  move <account> <top|bottom>  Move an account in the list");
   console.log(

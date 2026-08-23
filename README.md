@@ -31,6 +31,33 @@ aihubs-cli --help
 
 The selected provider CLI must be installed and available on `PATH`.
 
+## Welcome screen
+
+Running the command without arguments shows the quick-start screen:
+
+```text
+PS C:\Users\YourName> aihubs-cli
+
+    █████╗ ██╗██╗  ██╗██╗   ██╗██████╗ ███████╗
+   ██╔══██╗██║██║  ██║██║   ██║██╔══██╗██╔════╝
+   ███████║██║███████║██║   ██║██████╔╝███████║
+   ██╔══██║██║██╔══██║██║   ██║██╔══██╗╚════██║
+   ██║  ██║██║██║  ██║╚██████╔╝██║  ██║███████║
+   ╚═╝  ╚═╝╚═╝╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝
+                 ──  C L I  ──
+
+  Welcome to aihubs-cli v0.0.0
+  A simple local manager for your AI provider accounts and sessions.
+
+  GET STARTED
+  aihubs-cli login             Sign in and save an account
+  aihubs-cli list              View your saved accounts
+  aihubs-cli switch <account>  Change the active account
+  aihubs-cli status            Check authentication status
+
+  Run aihubs-cli --help for all commands and options.
+```
+
 ## Common commands
 
 ```powershell
@@ -45,6 +72,12 @@ aihubs-cli login claude
 aihubs-cli list
 aihubs-cli list codex
 aihubs-cli list grok
+aihubs-cli usage codex
+aihubs-cli usage grok
+aihubs-cli session codex
+aihubs-cli resume grok <session-id-or-title>
+aihubs-cli current codex
+aihubs-cli status grok
 
 # Inspect and switch accounts
 aihubs-cli current
@@ -62,7 +95,10 @@ aihubs-cli import accounts.json
 ```
 
 Account selectors can be row numbers, account IDs, email addresses, or aliases.
-Use `aihubs-cli --help` for the complete command list.
+Provider-specific forms are supported for `list`, `usage`, `session`, `resume`,
+`current`, `status`, and `switch`. Without a provider, the command uses the
+configured default provider. Use `aihubs-cli --help` for the complete command
+list.
 
 ## Account list
 

@@ -37,11 +37,24 @@ export function createContext(
   let providerArg =
     positional[0] === "login" ||
     positional[0] === "list" ||
-    positional[0] === "switch"
+    positional[0] === "switch" ||
+    positional[0] === "usage" ||
+    positional[0] === "session" ||
+    positional[0] === "resume" ||
+    positional[0] === "current" ||
+    positional[0] === "status"
       ? positional[1]?.toLowerCase()
       : undefined;
   if (positional[0] === "login" && !providerArg) providerArg = "freebuff";
   if (positional[0] === "switch" && !PROVIDER_COMMANDS[providerArg || ""])
+    providerArg = undefined;
+  if (
+    ["usage", "session", "resume", "current", "status"].includes(
+      positional[0],
+    ) &&
+    providerArg &&
+    !PROVIDER_COMMANDS[providerArg]
+  )
     providerArg = undefined;
   const paths = resolvePaths(providerArg);
   const color = (code: string, value: string) =>

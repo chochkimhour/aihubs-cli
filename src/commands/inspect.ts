@@ -48,7 +48,8 @@ export async function listCommand(ctx: CliContext): Promise<void> {
 }
 
 export async function currentCommand(ctx: CliContext): Promise<void> {
-  const { a, r } = await ctx.store.sync();
+  const provider = ctx.commandArgs()[0]?.toLowerCase();
+  const { a, r } = await ctx.store.sync(true, provider || "default");
   const accounts = withActiveFlags(a, r);
   if (!ctx.jsonMode) {
     const account: any = accounts.find((item) => item.active);
@@ -81,7 +82,8 @@ export async function currentCommand(ctx: CliContext): Promise<void> {
 }
 
 export async function statusCommand(ctx: CliContext): Promise<void> {
-  const { a, r } = await ctx.store.sync();
+  const provider = ctx.commandArgs()[0]?.toLowerCase();
+  const { a, r } = await ctx.store.sync(true, provider || "default");
   const accounts = withActiveFlags(a, r);
   ctx.out({
     success: true,

@@ -4,12 +4,21 @@ import { findActiveFromAuth, lastActiveAccount } from "../store.js";
 import { usageForAccount } from "../providers/account-usage.js";
 import { switchAccount } from "./accounts.js";
 import type { CliContext } from "../context.js";
+import { PROVIDER_COMMANDS } from "../constants.js";
 
 export async function usageCommand(ctx: CliContext): Promise<void> {
-  const { a, r } = await ctx.store.sync(true);
+  const requestedProvider = ctx.commandArgs()[0]?.toLowerCase();
+  const provider =
+    requestedProvider && PROVIDER_COMMANDS[requestedProvider]
+      ? requestedProvider
+      : undefined;
+  const { a, r } = await ctx.store.sync(true, provider || "default");
   const account = findActiveFromAuth(a, r) || lastActiveAccount(r);
   if (!account)
-    return ctx.fail("NO_ACTIVE_ACCOUNT", "No active Provider account was found.");
+    return ctx.fail(
+      "NO_ACTIVE_ACCOUNT",
+      "No active Provider account was found.",
+    );
   let usage;
   try {
     usage = await usageForAccount(ctx, account.id, true);
@@ -70,10 +79,18 @@ export async function autoSwitch(
   ctx: CliContext,
   silent = false,
 ): Promise<void> {
-  const { a, r } = await ctx.store.sync();
+  const requestedProvider = ctx.positional[1]?.toLowerCase();
+  const provider =
+    requestedProvider && PROVIDER_COMMANDS[requestedProvider]
+      ? requestedProvider
+      : undefined;
+  const { a, r } = await ctx.store.sync(false, provider || "default");
   const active = findActiveFromAuth(a, r);
   if (!active)
-    return ctx.fail("NO_ACTIVE_ACCOUNT", "No active Provider account was found.");
+    return ctx.fail(
+      "NO_ACTIVE_ACCOUNT",
+      "No active Provider account was found.",
+    );
   let current;
   try {
     current = await usageForAccount(ctx, active.id);
@@ -109,7 +126,10 @@ export async function autoSwitch(
       });
     return;
   }
-  for (const candidate of r.filter((item) => item.id !== active.id)) {
+  for (const candidate of r.filter(
+    (item) =>
+      item.id !== active.id && (!provider || item.provider === provider),
+  )) {
     const next = await usageForAccount(ctx, candidate.id);
     const available =
       next.usagePercent !== undefined ? next.usagePercent < 100 : false;
