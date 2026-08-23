@@ -1,6 +1,6 @@
 import { exists } from "../lib/json.js";
 import { findActiveFromAuth } from "../store.js";
-import { runGrok } from "../grok/spawn.js";
+import { runProvider } from "../providers/spawn.js";
 import type { CliContext } from "../context.js";
 
 export async function loginCommand(ctx: CliContext): Promise<void> {
@@ -11,9 +11,9 @@ export async function loginCommand(ctx: CliContext): Promise<void> {
     : true;
   if (!supported)
     ctx.fail("UNSUPPORTED_FLAG", `Unsupported login flag '${extra[0]}'.`);
-  await runGrok(
+  await runProvider(
     ["login", ...extra],
-    (code) => `grok login exited with code ${code}`,
+    (code) => `provider login exited with code ${code}`,
   );
   const { a, r } = await ctx.store.sync();
   const active = findActiveFromAuth(a, r);

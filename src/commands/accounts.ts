@@ -22,7 +22,7 @@ export async function switchAccount(
   await fs.mkdir(ctx.paths.backupsDir, { recursive: true });
   if (await fs.stat(ctx.paths.authFile).catch(() => undefined))
     await fs.copyFile(ctx.paths.authFile, backupAuthPath(ctx.paths));
-  await fs.mkdir(ctx.paths.grokHome, { recursive: true });
+  await fs.mkdir(ctx.paths.providerHome, { recursive: true });
   const next: Json = { ...a, [snap.key]: snap.entry };
   for (const k of Object.keys(next))
     if (k !== snap.key && r.some((item) => item.authEntryKey === k))
@@ -133,18 +133,74 @@ export async function resetCommand(ctx: CliContext): Promise<void> {
   });
 }
 
+function removeSelectors(ctx: CliContext): string[] {
+  return ctx.positional
+    .slice(1)
+    .flatMap((arg) => arg.split(/[,\s]+/))
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
 export async function removeCommand(ctx: CliContext): Promise<void> {
-  const name = ctx.positional[1];
-  const { r } = await ctx.store.sync();
-  const x = findAccount(r, name);
-  if (!x)
-    return ctx.fail("ACCOUNT_NOT_FOUND", `Account '${name}' was not found`);
+  const names = removeSelectors(ctx);
+  if (!names.length)
+    return ctx.fail(
+      "INVALID_USAGE",
+      "Use remove <number|id|email|alias> [number|id|email|alias ...]",
+    );
+  const { a, r } = await ctx.store.sync();
+  const found: Json[] = [];
+  const missing: string[] = [];
+  for (const name of names) {
+    const account = findAccount(r, name);
+    if (!account) missing.push(name);
+    else if (!found.some((item) => item.id === account.id)) found.push(account);
+  }
+  if (missing.length)
+    return ctx.fail(
+      "ACCOUNT_NOT_FOUND",
+      `Account '${missing.join("', '")}' was not found`,
+    );
   if (!ctx.yes)
     return ctx.fail(
       "CONFIRMATION_REQUIRED",
       "Use --yes to confirm account removal.",
     );
-  await ctx.store.removeSnapshot(x.id);
-  await ctx.store.saveRegistry(r.filter((y) => y !== x));
-  ctx.out({ success: true, removed: x.id });
+  const nextAuth: Json = { ...a };
+  let authChanged = false;
+  for (const account of found) {
+    await ctx.store.removeSnapshot(account.id);
+    const key = account.authEntryKey;
+    const entry = key ? nextAuth[key] : undefined;
+    if (
+      entry &&
+      (entry.user_id === account.userId ||
+        entry.principal_id === account.userId ||
+        !account.userId)
+    ) {
+      delete nextAuth[key];
+      authChanged = true;
+    }
+  }
+  const ids = new Set(found.map((item) => item.id));
+  await ctx.store.saveRegistry(r.filter((item) => !ids.has(item.id)));
+  if (authChanged) {
+    await fs.mkdir(ctx.paths.backupsDir, { recursive: true });
+    if (await fs.stat(ctx.paths.authFile).catch(() => undefined))
+      await fs.copyFile(ctx.paths.authFile, backupAuthPath(ctx.paths));
+    const tmp = ctx.paths.authFile + ".tmp-" + process.pid;
+    await writeJson(tmp, nextAuth);
+    await fs.rename(tmp, ctx.paths.authFile);
+  }
+  const removed = found.map((item) => item.id);
+  if (ctx.jsonMode) return ctx.out({ success: true, removed });
+  const labels = found.map(
+    (item) => item.email || item.alias || item.id,
+  );
+  console.log(
+    ctx.color(
+      "1;32",
+      `✓ Removed ${found.length} account${found.length === 1 ? "" : "s"}: ${labels.join(", ")}`,
+    ),
+  );
 }

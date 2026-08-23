@@ -1,4 +1,4 @@
-import { GLOBAL_FLAGS, GROK_COMMAND } from "./constants.js";
+import { GLOBAL_FLAGS, PROVIDER_COMMAND } from "./constants.js";
 import { failAndExit, colorize, printValue } from "./lib/output.js";
 import { resolvePaths, type AppPaths } from "./paths.js";
 import { AccountStore } from "./store.js";
@@ -10,7 +10,7 @@ export interface CliContext {
   yes: boolean;
   colorEnabled: boolean;
   paths: AppPaths;
-  grokCommand: string;
+  providerCommand: string;
   store: AccountStore;
   hasFlag(name: string): boolean;
   commandArgs(): string[];
@@ -41,7 +41,7 @@ export function createContext(
     yes,
     colorEnabled,
     paths,
-    grokCommand: GROK_COMMAND,
+    providerCommand: PROVIDER_COMMAND,
     store: undefined as unknown as AccountStore,
     hasFlag: (name) => argv.includes(name),
     commandArgs: () => {

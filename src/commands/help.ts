@@ -2,29 +2,31 @@ import { VERSION } from "../constants.js";
 import type { CliContext } from "../context.js";
 
 export function printHelp(ctx: CliContext): void {
-  console.log(ctx.color("1;36", "\ngrok-cli — Grok account manager\n"));
+  console.log(ctx.color("1;36", "\nvibecode-cli — AI provider account manager\n"));
   console.log(ctx.color("1;33", "USAGE"));
-  console.log("  grok-cli <command> [options]\n");
+  console.log("  vibecode-cli <command> [options]\n");
   console.log(ctx.color("1;33", "ACCOUNT COMMANDS"));
-  console.log("  list                         List saved Grok accounts");
+  console.log("  list                         List saved provider accounts");
   console.log(
     "  list --no-usage              List accounts without billing requests",
   );
   console.log(
-    "  usage                        Show active account Grok credits",
+    "  usage                        Show active provider credits",
   );
   console.log("  current                      Show the active account");
   console.log(
     "  status                       Show authentication and CLI status",
   );
   console.log(
-    "  login [--device-auth]        Sign in through the official Grok CLI",
+    "  login [--device-auth]        Sign in through the configured provider",
   );
   console.log("  switch <number|id|email|alias> Switch the active account");
-  console.log("  resume [session-id|title]    Resume a Grok session");
-  console.log("  session                      List available sessions");
+  console.log("  resume [session-id|title]    Resume a provider session");
+  console.log("  session                      List available provider sessions");
   console.log("  move <account> <top|bottom>  Move an account in the list");
-  console.log("  remove <number|email|alias>  Remove a saved account");
+  console.log(
+    "  remove <account> [account ...] Remove one or more saved accounts",
+  );
   console.log("  alias set <account> <alias>  Assign an account alias");
   console.log("  alias clear <account>        Remove an account alias\n");
   console.log("  reset set <account> <time>   Set a known account reset time");
@@ -61,27 +63,28 @@ export function printHelp(ctx: CliContext): void {
 export function printWelcome(ctx: CliContext): void {
   console.log(
     ctx.color(
-      "1;36",
+      "38;5;208",
       `
-   ██████╗ ██████╗  ██████╗ ██╗  ██╗      ██████╗██╗     ██╗
-  ██╔════╝ ██╔══██╗██╔═══██╗██║ ██╔╝     ██╔════╝██║     ██║
-  ██║  ███╗██████╔╝██║   ██║█████╔╝█████╗██║     ██║     ██║
-  ██║   ██║██╔══██╗██║   ██║██╔═██╗ ╚════╝██║     ██║     ██║
-  ╚██████╔╝██║  ██║╚██████╔╝██║  ██╗     ╚██████╗███████╗██║
-   ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═╝      ╚═════╝╚══════╝╚═╝
+██╗   ██╗██╗██████╗ ███████╗ ██████╗ ██████╗ ██████╗ ███████╗
+██║   ██║██║██╔══██╗██╔════╝██╔════╝██╔═══██╗██╔══██╗██╔════╝
+██║   ██║██║██████╔╝█████╗  ██║     ██║   ██║██║  ██║█████╗  
+╚██╗ ██╔╝██║██╔══██╗██╔══╝  ██║     ██║   ██║██║  ██║██╔══╝  
+ ╚████╔╝ ██║██████╔╝███████╗╚██████╗╚██████╔╝██████╔╝███████╗
+  ╚═══╝  ╚═╝╚═════╝ ╚══════╝ ╚═════╝ ╚═════╝ ╚═════╝ ╚══════╝
+                         ──  C L I  ──
 `,
     ),
   );
-  console.log(ctx.color("1;32", `  Welcome to grok-cli v${VERSION}`));
+  console.log(ctx.color("1;32", `  Welcome to vibecode-cli v${VERSION}`));
   console.log(
-    "  A simple local manager for your Grok accounts and sessions.\n",
+    "  A simple local manager for your AI provider accounts and sessions.\n",
   );
   console.log(ctx.color("1;33", "  GET STARTED"));
-  console.log("  grok-cli login                 Sign in and save an account");
-  console.log("  grok-cli list                  View your saved accounts");
-  console.log("  grok-cli switch <account>      Change the active account");
-  console.log("  grok-cli status                Check authentication status\n");
+  console.log("  vibecode-cli login             Sign in and save an account");
+  console.log("  vibecode-cli list              View your saved accounts");
+  console.log("  vibecode-cli switch <account>  Change the active account");
+  console.log("  vibecode-cli status            Check authentication status\n");
   console.log(
-    ctx.color("1;90", "  Run grok-cli --help for all commands and options."),
+    ctx.color("1;90", "  Run vibecode-cli --help for all commands and options."),
   );
 }

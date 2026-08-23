@@ -1,7 +1,7 @@
-import { GrokUsageError } from "../grok/usage-provider.js";
+import { ProviderUsageError } from "../providers/usage-provider.js";
 import { formatResetAt } from "../lib/format.js";
 import { findActiveFromAuth, lastActiveAccount } from "../store.js";
-import { usageForAccount } from "../grok/account-usage.js";
+import { usageForAccount } from "../providers/account-usage.js";
 import { switchAccount } from "./accounts.js";
 import type { CliContext } from "../context.js";
 
@@ -9,12 +9,12 @@ export async function usageCommand(ctx: CliContext): Promise<void> {
   const { a, r } = await ctx.store.sync(true);
   const account = findActiveFromAuth(a, r) || lastActiveAccount(r);
   if (!account)
-    return ctx.fail("NO_ACTIVE_ACCOUNT", "No active Grok account was found.");
+    return ctx.fail("NO_ACTIVE_ACCOUNT", "No active Provider account was found.");
   let usage;
   try {
     usage = await usageForAccount(ctx, account.id, true);
   } catch (error) {
-    if (error instanceof GrokUsageError) {
+    if (error instanceof ProviderUsageError) {
       if (ctx.jsonMode)
         return ctx.fail(
           error.kind === "auth" ? "AUTH_INVALID" : "BILLING_UNAVAILABLE",
@@ -22,15 +22,15 @@ export async function usageCommand(ctx: CliContext): Promise<void> {
         );
       if (error.kind === "auth") {
         console.error(
-          "✗ Unable to fetch Grok usage.\n\nThe selected Grok authentication is no longer valid.\nRun:\n\ngrok-auth login",
+          "✗ Unable to fetch provider usage.\n\nThe selected Provider authentication is no longer valid.\nRun:\n\nvibecode-cli login",
         );
       } else if (error.kind === "unsupported")
         console.error(
-          "✗ Grok returned an unsupported billing response.\n\nNo account data was modified.",
+          "✗ Provider returned an unsupported billing response.\n\nNo account data was modified.",
         );
       else
         console.error(
-          "✗ Grok usage is currently unavailable.\n\nThe Grok billing service did not return usable usage data.",
+          "✗ provider usage is currently unavailable.\n\nThe Provider billing service did not return usable usage data.",
         );
       process.exitCode = 1;
       return;
@@ -40,20 +40,30 @@ export async function usageCommand(ctx: CliContext): Promise<void> {
   const payload = { id: account.id, email: account.email };
   if (ctx.jsonMode) return ctx.out({ success: true, account: payload, usage });
   const fmt = (value?: string) => (value ? formatResetAt(value) : "-");
-  console.log("Grok Usage\n");
+  console.log("Provider Usage\n");
   console.log(`Account: ${account.email || account.id}`);
   console.log(`Plan: ${usage.subscriptionTier || "Unknown"}\n`);
   console.log("Credit Usage");
-  console.log(
-    `  Used:       ${usage.usagePercent === undefined ? "Unknown" : `${usage.usagePercent}%`}`,
-  );
-  console.log(
-    `  Remaining:  ${usage.usagePercent === undefined ? "Unknown" : `${Math.max(0, 100 - usage.usagePercent)}%`}\n`,
-  );
+  const usedLabel =
+    usage.usagePercent !== undefined
+      ? `${usage.usagePercent}%`
+      : usage.used !== undefined
+        ? String(usage.used)
+        : "Unknown";
+  const remainingLabel =
+    usage.usagePercent !== undefined
+      ? `${Math.max(0, 100 - usage.usagePercent)}%`
+      : usage.used !== undefined && usage.limit
+        ? String(Math.max(0, usage.limit - usage.used))
+        : usage.used !== undefined
+          ? "No API limit"
+          : "Unknown";
+  console.log(`  Used:       ${usedLabel}`);
+  console.log(`  Remaining:  ${remainingLabel}\n`);
   console.log("Current Period");
   console.log(`  Start:      ${fmt(usage.periodStart)}`);
   console.log(`  Reset At:   ${fmt(usage.resetAt)}\n`);
-  console.log("Source: Grok billing");
+  console.log("Source: Provider billing");
 }
 
 export async function autoSwitch(
@@ -63,7 +73,7 @@ export async function autoSwitch(
   const { a, r } = await ctx.store.sync();
   const active = findActiveFromAuth(a, r);
   if (!active)
-    return ctx.fail("NO_ACTIVE_ACCOUNT", "No active Grok account was found.");
+    return ctx.fail("NO_ACTIVE_ACCOUNT", "No active Provider account was found.");
   let current;
   try {
     current = await usageForAccount(ctx, active.id);

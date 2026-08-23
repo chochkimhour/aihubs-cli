@@ -3,7 +3,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { run } from "./app.js";
 
-export { billingValue, parseUsage } from "./grok/billing.js";
+export { billingValue, parseUsage } from "./providers/billing.js";
 export {
   formatLastActivity,
   formatResetAt,

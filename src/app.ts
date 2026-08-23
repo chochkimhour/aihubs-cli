@@ -55,7 +55,7 @@ export async function dispatch(ctx: CliContext): Promise<void> {
   if (ctx.hasFlag("--help") || ctx.rawArgs.includes("-h"))
     return printHelp(ctx);
   if (ctx.hasFlag("--version") || ctx.rawArgs.includes("-v"))
-    return ctx.out(`grok-cli ${VERSION}`);
+    return ctx.out(`vibecode-cli ${VERSION}`);
   if (!hasCommand && !ctx.jsonMode) return printWelcome(ctx);
   const handler = commands[cmd];
   if (!handler) ctx.fail("UNKNOWN_COMMAND", `Unknown command '${cmd}'.`);

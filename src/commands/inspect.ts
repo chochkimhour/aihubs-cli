@@ -1,7 +1,7 @@
 import { printAccountTable } from "../lib/format.js";
-import { grokVersion } from "../grok/spawn.js";
+import { providerVersion } from "../providers/spawn.js";
 import { withActiveFlags } from "../store.js";
-import { enrichAccountsWithUsage } from "../grok/account-usage.js";
+import { enrichAccountsWithUsage } from "../providers/account-usage.js";
 import type { CliContext } from "../context.js";
 
 export async function listCommand(ctx: CliContext): Promise<void> {
@@ -24,7 +24,7 @@ export async function currentCommand(ctx: CliContext): Promise<void> {
   if (!ctx.jsonMode) {
     const account: any = accounts.find((item) => item.active);
     if (!account)
-      return ctx.fail("NO_ACTIVE_ACCOUNT", "No active Grok account was found.");
+      return ctx.fail("NO_ACTIVE_ACCOUNT", "No active Provider account was found.");
     console.log(
       ctx.color(
         "1;36",
@@ -42,7 +42,7 @@ export async function currentCommand(ctx: CliContext): Promise<void> {
   ctx.out({
     success: true,
     active: accounts.find((item) => item.active) || null,
-    grokCli: await grokVersion(),
+    providerCli: await providerVersion(),
     authFile: ctx.paths.authFile,
     registry: "synchronized",
   });
@@ -54,7 +54,7 @@ export async function statusCommand(ctx: CliContext): Promise<void> {
   ctx.out({
     success: true,
     active: accounts.find((item) => item.active) || null,
-    grokCli: await grokVersion(),
+    providerCli: await providerVersion(),
     authFile: ctx.paths.authFile,
     registry: "synchronized",
   });

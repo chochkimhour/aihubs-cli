@@ -22,9 +22,12 @@ export const VERSION = readPackageVersion();
 export const SENSITIVE_KEY =
   /key|token|cookie|authorization|secret|password|api[_-]?key/i;
 export const DEFAULT_USAGE_CACHE_TTL_MS = 45_000;
-export const GROK_NOT_FOUND =
-  "Grok CLI was not found. Install Grok and ensure `grok` is in PATH.";
-export const GROK_COMMAND = process.platform === "win32" ? "grok.exe" : "grok";
+export const PROVIDER_NOT_FOUND =
+  "Provider CLI was not found. Install provider and ensure `provider` is in PATH.";
+// Override this during local development to point at a mock or installed provider CLI.
+export const PROVIDER_COMMAND =
+  process.env.VIBECODE_PROVIDER_COMMAND ||
+  (process.platform === "win32" ? "provider.exe" : "provider");
 
 export const GLOBAL_FLAGS = new Set([
   "--json",

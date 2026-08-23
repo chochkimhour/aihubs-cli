@@ -1,10 +1,11 @@
 {
-  "name": "@chochkimhour/grok-cli",
-  "version": "1.0.6",
-  "description": "Local multi-account manager for the Grok Build CLI",
+  "name": "vibecode-cli",
+  "version": "1.2.0",
+  "description": "Local multi-account manager for AI CLI providers",
   "keywords": [
-    "grok",
-    "grok-cli",
+    "vibecode-cli",
+    "ai-providers",
+    "ai",
     "cli",
     "account-manager",
     "multi-account",
@@ -18,7 +19,7 @@
   ],
   "type": "module",
   "bin": {
-    "grok-cli": "dist/cli.js"
+    "vibecode-cli": "dist/cli.js"
   },
   "scripts": {
     "build": "tsc",
@@ -47,6 +48,6 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/chochkimhour/grok-cli-main"
+    "url": "https://github.com/chochkimhour/vibecode-cli"
   }
 }

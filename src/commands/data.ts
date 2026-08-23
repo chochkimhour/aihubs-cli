@@ -162,11 +162,11 @@ export async function configCommand(ctx: CliContext): Promise<void> {
     );
   ctx.out({
     success: true,
-    grokHome: ctx.paths.grokHome,
+    providerHome: ctx.paths.providerHome,
     managerHome: ctx.paths.managerHome,
     authFile: ctx.paths.authFile,
     registryFile: ctx.paths.registryFile,
-    grokCommand: ctx.grokCommand,
+    providerCommand: ctx.providerCommand,
     configFile: ctx.paths.configFile,
   });
 }
@@ -176,7 +176,7 @@ export async function watchCommand(ctx: CliContext): Promise<void> {
   if (!(await exists(ctx.paths.authFile)))
     return ctx.fail(
       "AUTH_FILE_NOT_FOUND",
-      `Grok auth file not found: ${ctx.paths.authFile}`,
+      `Provider auth file not found: ${ctx.paths.authFile}`,
     );
   if (!ctx.jsonMode)
     console.log(`Watching ${ctx.paths.authFile}. Press Ctrl-C to stop.`);

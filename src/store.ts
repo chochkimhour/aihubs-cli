@@ -17,7 +17,7 @@ export class AccountStore {
   async auth(): Promise<Json> {
     const value = await readJson(this.paths.authFile, {});
     if (!value || Array.isArray(value) || typeof value !== "object")
-      throw new Error("Grok auth.json must contain a JSON object");
+      throw new Error("Provider auth.json must contain a JSON object");
     return value;
   }
 

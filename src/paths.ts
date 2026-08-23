@@ -2,7 +2,7 @@ import { homedir } from "node:os";
 import path from "node:path";
 
 export interface AppPaths {
-  grokHome: string;
+  providerHome: string;
   managerHome: string;
   authFile: string;
   registryFile: string;
@@ -13,12 +13,12 @@ export interface AppPaths {
 }
 
 export function resolvePaths(env: NodeJS.ProcessEnv = process.env): AppPaths {
-  const grokHome = env.GROK_HOME || path.join(homedir(), ".grok");
-  const managerHome = env.GROK_AUTH_HOME || path.join(homedir(), ".grok-auth");
+  const providerHome = env.PROVIDER_HOME || path.join(homedir(), ".provider");
+  const managerHome = env.PROVIDER_AUTH_HOME || path.join(homedir(), ".provider-auth");
   return {
-    grokHome,
+    providerHome,
     managerHome,
-    authFile: path.join(grokHome, "auth.json"),
+    authFile: path.join(providerHome, "auth.json"),
     registryFile: path.join(managerHome, "registry.json"),
     usageCacheDir: path.join(managerHome, "usage-cache"),
     configFile: path.join(managerHome, "config.json"),

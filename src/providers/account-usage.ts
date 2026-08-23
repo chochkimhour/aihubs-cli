@@ -1,9 +1,9 @@
 import {
-  GrokUsageError,
-  GrokUsageProvider,
-  type GrokUsage,
+  ProviderUsageError,
+  ProviderUsageProvider,
+  type ProviderUsage,
 } from "./usage-provider.js";
-import { grokVersion } from "./spawn.js";
+import { providerVersion } from "./spawn.js";
 import type { CliContext } from "../context.js";
 import { usageCacheTtlMs } from "../store.js";
 import type { Json } from "../types.js";
@@ -12,17 +12,17 @@ export async function usageForAccount(
   ctx: CliContext,
   id: string,
   force = false,
-): Promise<GrokUsage> {
+): Promise<ProviderUsage> {
   const snap = await ctx.store.readSnapshot(id);
   if (!snap?.entry)
-    throw new GrokUsageError(
+    throw new ProviderUsageError(
       "auth",
-      "The selected Grok authentication is no longer valid.",
+      "The selected Provider authentication is no longer valid.",
     );
-  return new GrokUsageProvider({
+  return new ProviderUsageProvider({
     cacheDir: ctx.paths.usageCacheDir,
     cacheTtlMs: await usageCacheTtlMs(ctx.paths),
-    grokVersion: await grokVersion(),
+    providerVersion: await providerVersion(),
   }).get(id, snap.entry, force);
 }
 

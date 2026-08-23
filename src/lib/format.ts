@@ -66,6 +66,7 @@ export function formatUsageUsed(account: Json): string {
     return `${Math.max(0, Math.min(100, Math.round((account.used / account.limit) * 100)))}% used`;
   if (account.usagePercent !== undefined)
     return `${Math.max(0, Math.min(100, Math.round(Number(account.usagePercent))))}% used`;
+  if (typeof account.used === "number") return `${account.used} used`;
   if (account.usageState === "unavailable") return "Unknown";
   return "Unknown";
 }

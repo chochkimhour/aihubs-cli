@@ -8,8 +8,8 @@ coverage/
 !.env.example
 
 # Local credentials and account-manager state
-.grok/
-.grok-auth/
+.provider/
+.provider-auth/
 auth.json
 registry.json
 accounts/
