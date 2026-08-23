@@ -1,6 +1,6 @@
 {
   "name": "aihubs-cli",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Local multi-account manager for AI CLI providers",
   "keywords": [
     "aihubs-cli",
