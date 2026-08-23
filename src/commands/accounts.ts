@@ -4,13 +4,18 @@ import { backupAuthPath } from "../store.js";
 import { writeJson } from "../lib/json.js";
 import type { CliContext } from "../context.js";
 import type { Json } from "../types.js";
+import { PROVIDER_COMMANDS } from "../constants.js";
 
 export async function switchAccount(
   ctx: CliContext,
   name?: string,
+  provider?: string,
 ): Promise<void> {
-  const { a, r } = await ctx.store.sync();
-  const target = findAccount(r, name);
+  const { a, r } = await ctx.store.sync(false, provider || "default");
+  const target = findAccount(
+    provider ? r.filter((item) => item.provider === provider) : r,
+    name,
+  );
   if (!target)
     return ctx.fail(
       "ACCOUNT_NOT_FOUND",
@@ -44,7 +49,15 @@ export async function switchAccount(
 }
 
 export async function switchCommand(ctx: CliContext): Promise<void> {
-  await switchAccount(ctx, ctx.positional[1]);
+  const possibleProvider = ctx.positional[1]?.toLowerCase();
+  const provider = possibleProvider && PROVIDER_COMMANDS[possibleProvider]
+    ? possibleProvider
+    : undefined;
+  await switchAccount(
+    ctx,
+    provider ? ctx.positional[2] : ctx.positional[1],
+    provider,
+  );
 }
 
 export async function moveCommand(ctx: CliContext): Promise<void> {

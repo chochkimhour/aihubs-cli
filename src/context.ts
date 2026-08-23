@@ -1,4 +1,7 @@
-import { GLOBAL_FLAGS, PROVIDER_COMMAND } from "./constants.js";
+import { existsSync } from "node:fs";
+import { homedir } from "node:os";
+import path from "node:path";
+import { GLOBAL_FLAGS, PROVIDER_COMMAND, PROVIDER_COMMANDS } from "./constants.js";
 import { failAndExit, colorize, printValue } from "./lib/output.js";
 import { resolvePaths, type AppPaths } from "./paths.js";
 import { AccountStore } from "./store.js";
@@ -30,10 +33,14 @@ export function createContext(
     !process.env.NO_COLOR &&
     Boolean(process.stdout.isTTY);
   const positional = argv.filter((a) => !a.startsWith("--"));
-  const providerArg =
-    positional[0] === "login" || positional[0] === "list"
+  let providerArg =
+    positional[0] === "login" || positional[0] === "list" || positional[0] === "switch"
       ? positional[1]?.toLowerCase()
       : undefined;
+  if (positional[0] === "switch" && !PROVIDER_COMMANDS[providerArg || ""])
+    providerArg = undefined;
+  if (positional[0] === "list" && !providerArg && existsSync(path.join(homedir(), ".codex", "auth.json")))
+    providerArg = "codex";
   const paths = resolvePaths(providerArg === "claudecode" ? "claude" : providerArg);
   const color = (code: string, value: string) =>
     colorize(colorEnabled, code, value);

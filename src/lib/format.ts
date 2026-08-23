@@ -76,11 +76,16 @@ export function printAccountTable(
   accounts: Json[],
   active?: string,
 ): void {
+  const header =
+    "    ID  " +
+    "PROVIDER".padEnd(12) +
+    "ACCOUNT".padEnd(30) +
+    "STATUS".padEnd(10) +
+    "LAST SELECTED".padEnd(16) +
+    "USAGE".padEnd(12) +
+    "RESET AT";
   console.log(
-    ctx.color(
-      "1;36",
-      "     ID  PROVIDER     ACCOUNT                       AUTH   STATUS   LAST SELECTED   USAGE        RESET AT",
-    ),
+    ctx.color("1;36", header),
   );
   console.log(
     "------------------------------------------------------------------------------------------------",
@@ -88,17 +93,16 @@ export function printAccountTable(
   for (const [index, account] of accounts.entries()) {
     const marker = account.id === active ? "*" : " ";
     const number = String(index + 1).padStart(2, "0");
-    const name = String(
-      account.email || account.displayName || account.id,
-    ).padEnd(29);
-    const provider = String(account.provider || "default").padEnd(12);
-    const authMode = String(account.authMode || "-")
-      .toUpperCase()
-      .padEnd(7);
+    const name = String(account.email || account.displayName || account.id)
+      .slice(0, 29)
+      .padEnd(30);
+    const provider = String(account.provider || "default")
+      .slice(0, 11)
+      .padEnd(12);
     const status = String(account.status || "-").toLowerCase();
     const statusLabel = (
       status === "-" ? status : status[0].toUpperCase() + status.slice(1)
-    ).padEnd(8);
+    ).padEnd(10);
     const last = formatLastActivity(account).padEnd(16);
     const tokenLeft = formatUsageUsed(account).padEnd(12);
     const reset = formatResetDate(
@@ -107,7 +111,7 @@ export function printAccountTable(
         account.manualResetAt ||
         account.resetIn,
     );
-    const row = `${marker} ${number} ${provider} ${name} ${authMode}${statusLabel}${last}${tokenLeft} ${reset}`;
+    const row = `${marker} ${number}  ${provider}${name}${statusLabel}${last}${tokenLeft}${reset}`;
     console.log(account.id === active ? ctx.color("1;32", row) : row);
   }
   console.log(

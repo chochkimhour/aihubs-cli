@@ -20,9 +20,18 @@ export class AccountStore {
       throw new Error("Provider auth.json must contain a JSON object");
     if (provider === "codex" && value.tokens && typeof value.tokens === "object") {
       const tokens = value.tokens as Json;
+      let email = "Codex account";
+      const idToken = typeof tokens.id_token === "string" ? tokens.id_token : "";
+      try {
+        const payload = idToken.split(".")[1];
+        const claims = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
+        if (typeof claims.email === "string") email = claims.email;
+      } catch {
+        // Keep a descriptive fallback when the provider token cannot be decoded.
+      }
       return {
         codex: {
-          email: "Codex account",
+          email,
           user_id: tokens.account_id || "codex-account",
           auth_mode: value.auth_mode || "chatgpt",
         },
@@ -84,8 +93,16 @@ export class AccountStore {
         const id = crypto.randomUUID();
         x = { ...entryMeta(id, key, e, false, provider) };
         r.push(x);
+      } else {
+        x.provider ||= provider;
+        if (e.email) x.email = e.email;
+        if (e.email) x.displayName = e.email;
       }
-      await this.writeSnapshot(x.id, { key, entry: e });
+      try {
+        await this.writeSnapshot(x.id, { key, entry: e });
+      } catch (error: any) {
+        if (!(error?.code === "EACCES" || error?.code === "EPERM")) throw error;
+      }
     }
     r = r.filter(
       (item, index, all) =>

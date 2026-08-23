@@ -36,6 +36,9 @@ aihubs-cli list grok
 aihubs-cli list codex
 aihubs-cli current
 aihubs-cli status
+aihubs-cli switch codex 1
+aihubs-cli switch grok email@example.com
+aihubs-cli switch gemini personal
 aihubs-cli login
 aihubs-cli login codex
 aihubs-cli login grok
@@ -60,6 +63,8 @@ aihubs-cli repair
 aihubs-cli config
 aihubs-cli watch
 ```
+
+Provider-aware switching works with all supported providers: `codex`, `grok`, `kiro`, `opencode`, `claudecode`, `freebuff`, `deepseek`, `gemini`, and `openrouter`.
 
 Accounts accept a row number, ID, email, or alias. Remove multiple accounts with spaces or commas:
 

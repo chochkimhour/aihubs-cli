@@ -5,9 +5,16 @@ import { enrichAccountsWithUsage } from "../providers/account-usage.js";
 import type { CliContext } from "../context.js";
 
 export async function listCommand(ctx: CliContext): Promise<void> {
-  const provider = ctx.commandArgs()[0]?.toLowerCase();
-  const { a, r } = await ctx.store.sync(true, provider || "default");
-  const accounts = withActiveFlags(a, provider ? r.filter((item) => item.provider === provider) : r);
+  const requestedProvider = ctx.commandArgs()[0]?.toLowerCase();
+  const provider = requestedProvider ||
+    (ctx.paths.providerHome.endsWith(".codex") ? "codex" : "default");
+  const { a, r } = await ctx.store.sync(true, provider);
+  const accounts = withActiveFlags(
+    a,
+    requestedProvider
+      ? r.filter((item) => item.provider === requestedProvider)
+      : r.filter((item) => item.provider !== "default" || item.authEntryKey !== "tokens"),
+  );
   const active = (accounts.find((item) => item.active) as any)?.id;
   const listed = ctx.hasFlag("--no-usage")
     ? accounts

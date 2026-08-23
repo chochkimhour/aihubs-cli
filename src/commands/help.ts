@@ -20,7 +20,8 @@ export function printHelp(ctx: CliContext): void {
   console.log(
     "  login [provider] [--device-auth] Sign in through a provider",
   );
-  console.log("  switch <number|id|email|alias> Switch the active account");
+  console.log("  switch [provider] <number|id|email|alias> Switch the active account");
+  console.log("                               Providers: codex, grok, kiro, opencode, claudecode, freebuff, deepseek, gemini, openrouter");
   console.log("  resume [session-id|title]    Resume a provider session");
   console.log("  session                      List available provider sessions");
   console.log("  move <account> <top|bottom>  Move an account in the list");
