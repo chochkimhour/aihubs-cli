@@ -163,16 +163,6 @@ freebuff --version
 claude --version
 ```
 
-Install Grok CLI from [xAI](https://x.ai/cli). Install Gemini CLI with:
-
-```powershell
-npm install -g @google/gemini-cli
-```
-
-Google ended Gemini CLI sign-in for personal Google accounts on June 18, 2026.
-Gemini API-key authentication and eligible enterprise accounts remain supported;
-personal users should migrate to [Antigravity](https://antigravity.google).
-
 If a Codex account displays `401`, authenticate that account again:
 
 ```powershell
