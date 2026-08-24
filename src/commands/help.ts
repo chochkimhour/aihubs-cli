@@ -3,7 +3,7 @@ import type { CliContext } from "../context.js";
 
 export function printHelp(ctx: CliContext): void {
   console.log(
-    ctx.color("1;36", "\naihubs-cli — AI provider account manager\n"),
+    ctx.color("1;38;5;208", "\naihubs-cli — AI provider account manager\n"),
   );
   console.log(ctx.color("1;33", "USAGE"));
   console.log("  aihubs-cli <command> [options]\n");
@@ -27,6 +27,7 @@ export function printHelp(ctx: CliContext): void {
     "                               Providers: codex, grok, gemini, freebuff, claude",
   );
   console.log("  resume [provider] [session]  Resume a provider session");
+  console.log("  continue <provider> <session> Continue a provider session");
   console.log(
     "  session [provider]           List available provider sessions",
   );

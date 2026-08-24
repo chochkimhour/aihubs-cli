@@ -35,6 +35,7 @@ const commands: Record<string, CommandHandler> = {
   status: statusCommand,
   switch: switchCommand,
   resume: resumeCommand,
+  continue: resumeCommand,
   session: sessionCommand,
   move: moveCommand,
   alias: aliasCommand,

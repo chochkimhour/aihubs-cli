@@ -10,7 +10,14 @@ export async function resumeCommand(ctx: CliContext): Promise<void> {
   const command = provider ? PROVIDER_COMMANDS[provider] : undefined;
   const session = provider ? ctx.positional[2] : ctx.positional[1];
   await autoSwitch(ctx, true);
-  const argv = session ? ["--resume", session] : ["--continue"];
+  const argv =
+    provider === "codex"
+      ? session
+        ? ["resume", session]
+        : ["resume", "--last"]
+      : session
+        ? ["--resume", session]
+        : ["--continue"];
   await runProvider(
     argv,
     (code) => `provider resume exited with code ${code}`,
@@ -30,6 +37,12 @@ export async function sessionCommand(ctx: CliContext): Promise<void> {
       "Use 'session' to list sessions, then 'resume <session-id>' to continue one.",
     );
   await autoSwitch(ctx, true);
+  if (provider === "codex")
+    return runProvider(
+      ["resume", "--all"],
+      (code) => `provider session list exited with code ${code}`,
+      command,
+    );
   await runProvider(
     ["sessions", "list"],
     (code) => `provider session list exited with code ${code}`,

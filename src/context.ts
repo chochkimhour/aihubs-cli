@@ -41,6 +41,7 @@ export function createContext(
     positional[0] === "usage" ||
     positional[0] === "session" ||
     positional[0] === "resume" ||
+    positional[0] === "continue" ||
     positional[0] === "current" ||
     positional[0] === "status"
       ? positional[1]?.toLowerCase()
@@ -49,7 +50,7 @@ export function createContext(
   if (positional[0] === "switch" && !PROVIDER_COMMANDS[providerArg || ""])
     providerArg = undefined;
   if (
-    ["usage", "session", "resume", "current", "status"].includes(
+    ["usage", "session", "resume", "continue", "current", "status"].includes(
       positional[0],
     ) &&
     providerArg &&

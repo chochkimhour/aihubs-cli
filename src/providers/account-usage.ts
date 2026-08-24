@@ -33,10 +33,32 @@ export async function enrichAccountsWithUsage(
   ctx: CliContext,
   accounts: Json[],
 ) {
+  const [cacheTtlMs, version, registry] = await Promise.all([
+    usageCacheTtlMs(ctx.paths),
+    providerVersion(),
+    ctx.store.registry(),
+  ]);
+  const provider = new ProviderUsageProvider({
+    cacheDir: ctx.paths.usageCacheDir,
+    cacheTtlMs,
+    providerVersion: version,
+  });
   return Promise.all(
     accounts.map(async (account) => {
       try {
-        const usage = await usageForAccount(ctx, account.id);
+        const snap = await ctx.store.readSnapshot(account.id);
+        if (!snap?.entry)
+          throw new ProviderUsageError(
+            "auth",
+            "The selected Provider authentication is no longer valid.",
+          );
+        const registryEntry = registry.find((item) => item.id === account.id);
+        const usage = await provider.get(
+          account.id,
+          snap.entry,
+          false,
+          registryEntry?.provider,
+        );
         return { ...account, ...usage };
       } catch (error) {
         return {

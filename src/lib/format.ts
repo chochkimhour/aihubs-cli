@@ -26,9 +26,7 @@ export function formatLastActivity(account: Json): string {
   return date.toLocaleString("en-US", {
     month: "short",
     day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
+    year: "numeric",
   });
 }
 
@@ -75,16 +73,11 @@ function formatCompactReset(value: unknown): string {
   if (!value) return "-";
   const date = new Date(String(value));
   if (Number.isNaN(date.getTime())) return String(value).slice(0, 18);
-  const time = date.toLocaleTimeString("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
   const day = date.toLocaleDateString("en-US", {
     day: "numeric",
     month: "short",
   });
-  return `${time} on ${day}`;
+  return day;
 }
 
 function formatPlan(value: unknown): string {
@@ -112,10 +105,9 @@ export function printAccountTable(
     "PROVIDER".padEnd(12) +
     "ACCOUNT".padEnd(32) +
     "PLAN".padEnd(10) +
-    "5H USAGE".padEnd(24) +
-    "WEEKLY USAGE".padEnd(24) +
+    "TOKEN USAGE".padEnd(24) +
     "LAST ACTIVITY";
-  console.log(ctx.color("1;36", header));
+  console.log(ctx.color("1;38;5;208", header));
   console.log("-".repeat(header.length));
   for (const [index, account] of accounts.entries()) {
     const marker = account.id === active ? "*" : " ";
@@ -140,16 +132,11 @@ export function printAccountTable(
         account.usageResetAt ||
         account.manualResetAt,
     );
-    const fiveHourCell = `${fiveHour}${reset === "-" ? "" : ` (${reset})`}`
+    const fiveHourCell = `${fiveHour}${reset === "-" ? "" : ` | ${reset}`}`
       .slice(0, 23)
       .padEnd(24);
-    const weeklyReset = formatCompactReset(account.weeklyResetAt);
-    const weekly =
-      `${account.weeklyUsage || account.weekly || "-"}${weeklyReset === "-" ? "" : ` (${weeklyReset})`}`
-        .slice(0, 23)
-        .padEnd(24);
     const last = formatLastActivity(account);
-    const row = `${marker} ${number} ${provider}${name}${plan}${fiveHourCell}${weekly}${last}`;
+    const row = `${marker} ${number} ${provider}${name}${plan}${fiveHourCell}${last}`;
     console.log(account.id === active ? ctx.color("1;32", row) : row);
   }
   console.log(

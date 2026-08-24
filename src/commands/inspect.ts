@@ -60,7 +60,7 @@ export async function currentCommand(ctx: CliContext): Promise<void> {
       );
     console.log(
       ctx.color(
-        "1;36",
+        "1;38;5;208",
         `Active account: ${account.email || account.displayName || account.id}`,
       ),
     );

@@ -76,6 +76,8 @@ aihubs-cli usage codex
 aihubs-cli usage grok
 aihubs-cli session codex
 aihubs-cli resume grok <session-id-or-title>
+aihubs-cli continue codex <session-id-or-title>
+aihubs-cli continue grok <session-id-or-title>
 aihubs-cli current codex
 aihubs-cli status grok
 
@@ -103,13 +105,13 @@ list.
 ## Account list
 
 The human-readable list includes the row ID, provider, plan, short-window
-usage, weekly usage, and last activity:
+usage, and last activity:
 
 ```text
- ID   PROVIDER    ACCOUNT                         PLAN      5H USAGE                WEEKLY USAGE            LAST ACTIVITY
+ ID   PROVIDER    ACCOUNT                         PLAN      TOKEN USAGE             LAST ACTIVITY
 -------------------------------------------------------------------------------------------------------------------------
-  01 codex       account@example.com             Go        9% (19:05 on Sep 22)    -                       Now
-  02 codex       another@example.com             Free      401                     -                       3h ago
+  01 codex       account@example.com             Go        9% | Sep 22             Aug 24, 2026
+  02 codex       another@example.com             Free      401                     Aug 23, 2026
 ```
 
 For Codex accounts, usage is retrieved independently for every account from the
