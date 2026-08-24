@@ -33,7 +33,7 @@ The selected provider CLI must be installed and available on `PATH`.
 
 ## Welcome screen
 
-Running the command without arguments shows the quick-start screen:
+Running the command without arguments shows the quick-start screen for the current version:
 
 ```text
 PS C:\Users\YourName> aihubs-cli
@@ -104,14 +104,14 @@ provider, other commands use the configured default provider. Use
 
 ## Account list
 
-The human-readable list includes the row ID, provider, plan, short-window
-usage, and last activity:
+The human-readable list includes the row ID, provider, plan, token usage, reset
+date, and last activity:
 
 ```text
  ID   PROVIDER    ACCOUNT                         PLAN      TOKEN USAGE    RESET AT         LAST ACTIVITY
 -------------------------------------------------------------------------------------------------------------------------
-  01 codex       account@example.com             Go        9%             Sep 22, 2026     Aug 24, 2026
-  02 codex       another@example.com             Free      401            -                Aug 23, 2026
+  01 codex       account@example.com             Go        9%             Sep 22, 2026      Aug 24, 2026
+  02 codex       another@example.com             Free      Auth expired    -                Aug 23, 2026
 ```
 
 For Codex accounts, usage is retrieved independently for every account from the
@@ -125,9 +125,9 @@ files in:
 ~/.codex/accounts/*.auth.json
 ```
 
-On Windows, `~` means the current user profile directory. A `401` or `403` in
-the usage column means that account needs authentication again; it is not a
-usage percentage. Missing secondary usage is displayed as `-`.
+On Windows, `~` means the current user profile directory. `Auth expired`,
+`Access denied`, `Rate limited`, and `Unknown` are status messages, not usage
+percentages. Missing usage is displayed as `-`.
 
 ## Provider login
 
@@ -149,12 +149,11 @@ aihubs-cli --json list
 aihubs-cli --json list codex
 aihubs-cli --json status
 aihubs-cli --json doctor
-aihubs-cli --no-update-check list
 ```
 
 `doctor` checks installed provider CLIs, saved account counts, and basic
 authentication metadata. Use `--no-update-check` to skip the daily npm update
-notification for a command.
+notification for a command, for example: `aihubs-cli --no-update-check list`.
 
 Normal JSON output redacts access tokens, refresh tokens, API keys, cookies,
 authorization headers, and other sensitive values. Credential export requires
