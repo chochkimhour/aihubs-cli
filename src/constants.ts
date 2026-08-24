@@ -27,9 +27,7 @@ export function providerNotFoundMessage(command: string): string {
   const install =
     name === "grok"
       ? "Install xAI Grok CLI from https://x.ai/cli, then reopen PowerShell."
-      : name === "gemini"
-        ? "Install Gemini CLI with 'npm install -g @google/gemini-cli', then reopen PowerShell."
-        : `Install '${name}' CLI, then reopen PowerShell.`;
+      : `Install '${name}' CLI, then reopen PowerShell.`;
   return `Provider CLI '${command}' was not found in PATH. ${install} Verify it with '${command} --version'.`;
 }
 // Override this during local development to point at a mock or installed provider CLI.
@@ -40,7 +38,6 @@ export const PROVIDER_COMMAND =
 export const PROVIDER_COMMANDS: Record<string, string> = {
   codex: process.platform === "win32" ? "codex.cmd" : "codex",
   grok: process.platform === "win32" ? "grok.exe" : "grok",
-  gemini: process.platform === "win32" ? "gemini.cmd" : "gemini",
   freebuff: process.platform === "win32" ? "freebuff.cmd" : "freebuff",
   agy:
     process.platform === "win32"

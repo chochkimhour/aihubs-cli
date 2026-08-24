@@ -20,7 +20,6 @@ export function resolvePaths(
     codex: path.join(homedir(), ".codex"),
     claude: path.join(homedir(), ".claude"),
     grok: path.join(homedir(), ".grok"),
-    gemini: path.join(homedir(), ".gemini"),
     freebuff: path.join(homedir(), ".freebuff"),
     agy: path.join(homedir(), ".antigravity"),
   };

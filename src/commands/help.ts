@@ -29,7 +29,7 @@ export function printHelp(ctx: CliContext): void {
     "                               Switch is supported only for codex and grok",
   );
   console.log(
-    "                               Providers: codex, grok, gemini, freebuff, agy, claude",
+    "                               Providers: codex, grok, freebuff, agy, claude",
   );
   console.log("                               Agy uses the 'agy' CLI");
   console.log(

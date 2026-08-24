@@ -45,7 +45,7 @@ export async function enrichAccountsWithUsage(
   });
   return Promise.all(
     accounts.map(async (account) => {
-      // Google-account Agy/Gemini CLI quota is exposed by the provider's
+      // Google-account Agy quota is exposed by the provider's
       // interactive `/stats` command, not by a supported account billing API.
       // Do not send these entries through the generic provider endpoint and
       // mislabel the result as an authentication error.

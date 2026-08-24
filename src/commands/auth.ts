@@ -34,14 +34,12 @@ export async function loginCommand(ctx: CliContext): Promise<void> {
   if (!supported)
     ctx.fail("UNSUPPORTED_FLAG", `Unsupported login flag '${loginArgs[0]}'.`);
   const failMessage = (code: number | null) =>
-    providerName === "gemini"
-      ? `Gemini CLI login failed with exit code ${code}. Google ended personal-account Gemini CLI sign-in on June 18, 2026. Use a Gemini API key, an eligible enterprise account, or migrate to Antigravity: https://antigravity.google`
-      : `Login through '${providerCommand || "the default provider CLI"}' failed with exit code ${code}. Verify the provider CLI is installed and try again.`;
+    `Login through '${providerCommand || "the default provider CLI"}' failed with exit code ${code}. Verify the provider CLI is installed and try again.`;
   if (providerName === "codex")
     await runCodexLoginIsolated(ctx, loginArgs, failMessage);
   else if (providerName === "agy")
     // Agy starts its OAuth flow on launch; it does not implement a `login`
-    // subcommand like Codex and Gemini.
+    // subcommand like Codex.
     await runProvider(loginArgs, failMessage, providerCommand);
   else await runProvider(["login", ...loginArgs], failMessage, providerCommand);
   const { a, r } = await ctx.store.sync(false, providerName || "default");

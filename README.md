@@ -15,7 +15,6 @@ Supported providers:
 
 - `codex`
 - `grok`
-- `gemini`
 - `freebuff`
 - `agy`
 - `claude`
@@ -65,7 +64,6 @@ PS C:\Users\YourName> aihubs-cli
 # Sign in
 aihubs-cli login codex
 aihubs-cli login grok
-aihubs-cli login gemini
 aihubs-cli login freebuff
 aihubs-cli login agy
 aihubs-cli login claude
@@ -153,8 +151,7 @@ use their own installed CLI login flow.
 
 ### Agy
 
-Google has transitioned consumer Gemini CLI access to Antigravity CLI. Install
-the Antigravity CLI so the `agy` command is available on `PATH`, then sign in
+Use the Antigravity CLI through the `agy` command. Install `agy`, then sign in
 and manage it with:
 
 ```powershell
@@ -164,7 +161,8 @@ aihubs-cli list agy
 aihubs-cli current agy
 ```
 
-Agy account emails are discovered from `~/.gemini/google_accounts.json` and
+Agy account emails are discovered from the provider account file under
+`~/.gemini/google_accounts.json` and
 recent Agy authentication logs. Agy does not expose separate switchable OAuth
 profiles, so `switch agy ...` is not supported; use Agy's own sign-out and
 Google authentication flow to change accounts. Agy quota is shown as
@@ -232,7 +230,6 @@ Verify the provider CLI is installed and available on `PATH`:
 ```powershell
 codex --version
 grok --version
-gemini --version
 freebuff --version
 claude --version
 ```
