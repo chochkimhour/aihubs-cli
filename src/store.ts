@@ -1,5 +1,6 @@
 import { promises as fs } from "node:fs";
 import crypto from "node:crypto";
+import { homedir } from "node:os";
 import path from "node:path";
 import { DEFAULT_USAGE_CACHE_TTL_MS } from "./constants.js";
 import { readJson, writeJson } from "./lib/json.js";
@@ -15,6 +16,9 @@ export class AccountStore {
   }
 
   async auth(provider = "default"): Promise<Json> {
+    if (provider === "agy") return this.agyAccounts();
+    if (provider === "freebuff") return this.freebuffAccounts();
+    if (provider === "claude") return this.claudeAccounts();
     const value = await readJson(this.paths.authFile, {});
     if (!value || Array.isArray(value) || typeof value !== "object")
       throw new Error("Provider auth.json must contain a JSON object");
@@ -22,8 +26,84 @@ export class AccountStore {
     return value;
   }
 
+  private async agyAccounts(): Promise<Json> {
+    const source = await readJson(
+      path.join(homedir(), ".gemini", "google_accounts.json"),
+      {},
+    );
+    const logEmail = await latestAgyLoginEmail();
+    const emails = [
+      ...(logEmail ? [logEmail] : []),
+      ...(typeof source?.active === "string" ? [source.active] : []),
+      ...(Array.isArray(source?.old) ? source.old : []),
+    ].filter((email): email is string => typeof email === "string" && !!email);
+    const result: Json = {};
+    for (const email of [...new Set(emails)])
+      result[email] = {
+        email,
+        user_id: email,
+        auth_mode: "google",
+      };
+    return result;
+  }
+
+  private async claudeAccounts(): Promise<Json> {
+    // Claude Code stores API-based authentication in ~/.claude/settings.json.
+    const settings = await readJson(
+      path.join(this.paths.providerHome, "settings.json"),
+      null,
+    );
+    const token = settings?.env?.ANTHROPIC_AUTH_TOKEN;
+    if (typeof token !== "string" || !token) return {};
+    const tokenId = crypto
+      .createHash("sha256")
+      .update(token)
+      .digest("hex")
+      .slice(0, 24);
+    return {
+      claude: {
+        email: "Claude API account",
+        user_id: `claude-api-${tokenId}`,
+        access_token: token,
+        auth_mode: "api",
+      },
+    };
+  }
+
+  private async freebuffAccounts(): Promise<Json> {
+    // FreeBuff Desktop keeps its signed-in session outside ~/.freebuff.
+    const statePath = path.join(
+      path.dirname(this.paths.providerHome),
+      ".config",
+      "freebuff-desktop",
+      "state.json",
+    );
+    const state = await readJson(statePath, null);
+    const sessions = state?.authSessions;
+    if (!sessions || typeof sessions !== "object") return {};
+    const result: Json = {};
+    for (const [origin, rawSession] of Object.entries(sessions)) {
+      const session = rawSession as Json;
+      const user = session?.user as Json | undefined;
+      if (!user || typeof user !== "object" || typeof user.id !== "string")
+        continue;
+      result[origin] = {
+        email: typeof user.email === "string" ? user.email : undefined,
+        displayName: typeof user.name === "string" ? user.name : undefined,
+        user_id: user.id,
+        access_token:
+          typeof session.token === "string" ? session.token : undefined,
+        auth_mode: "freebuff",
+      };
+    }
+    return result;
+  }
+
   private async codexAccounts(activeAuth: Json): Promise<Json> {
-    const sources: Json[] = [activeAuth];
+    const directEntries = Object.values(activeAuth).filter(
+      (value) => value && typeof value === "object" && !Array.isArray(value),
+    ) as Json[];
+    const sources: Json[] = directEntries.length ? directEntries : [activeAuth];
     const storedPlans: Record<string, string> = {};
     try {
       const registry = await readJson(
@@ -51,9 +131,28 @@ export class AccountStore {
     } catch {
       // Older Codex installations do not have a managed accounts directory.
     }
+    const knownEmails: Record<string, string> = {};
+    for (const source of sources) {
+      const tokens = source.tokens || source;
+      if (typeof tokens?.account_id !== "string") continue;
+      const payload =
+        typeof tokens.id_token === "string"
+          ? tokens.id_token.split(".")[1]
+          : "";
+      try {
+        const claims = JSON.parse(
+          Buffer.from(payload, "base64url").toString("utf8"),
+        );
+        if (typeof claims.email === "string")
+          knownEmails[tokens.account_id] = claims.email;
+      } catch {
+        // Some Codex entries do not include a readable ID token.
+      }
+    }
     const result: Json = {};
     for (const [sourceIndex, source] of sources.entries()) {
-      const tokens = source.tokens;
+      // Codex versions use both { tokens: {...} } and direct account entries.
+      const tokens = source.tokens || source;
       if (!tokens || typeof tokens !== "object") continue;
       const accountId =
         typeof tokens.account_id === "string" ? tokens.account_id : undefined;
@@ -62,7 +161,7 @@ export class AccountStore {
         Object.values(result).some((entry) => entry?.user_id === accountId)
       )
         continue;
-      let email = "Codex account";
+      let email = knownEmails[accountId] || "Codex account";
       let plan = storedPlans[accountId] || "Unknown";
       try {
         const payload =
@@ -149,6 +248,9 @@ export class AccountStore {
         r.push(x);
       } else {
         x.provider ||= provider;
+        // Migrate the previous provider label without losing its saved data.
+        if (provider === "agy" && x.provider === "antigravity")
+          x.provider = "agy";
         if (e.email) x.email = e.email;
         if (e.email) x.displayName = e.email;
         if (e.plan) x.plan = e.plan;
@@ -172,6 +274,35 @@ export class AccountStore {
     await this.saveRegistry(r);
     return { a, r };
   }
+}
+
+async function latestAgyLoginEmail(): Promise<string | undefined> {
+  const logDir = path.join(homedir(), ".gemini", "antigravity-cli", "log");
+  let files: string[];
+  try {
+    files = (await fs.readdir(logDir)).filter((name) => name.endsWith(".log"));
+  } catch {
+    return undefined;
+  }
+  let latest: { time: number; email: string } | undefined;
+  for (const name of files) {
+    const file = path.join(logDir, name);
+    try {
+      const [stat, text] = await Promise.all([
+        fs.stat(file),
+        fs.readFile(file, "utf8"),
+      ]);
+      const matches = [
+        ...text.matchAll(/authenticated successfully as ([^\s\\]+@[^\s\\]+)/gi),
+      ];
+      const email = matches.at(-1)?.[1];
+      if (email && (!latest || stat.mtimeMs > latest.time))
+        latest = { time: stat.mtimeMs, email };
+    } catch {
+      // Ignore logs that disappear or cannot be read.
+    }
+  }
+  return latest?.email;
 }
 
 export function entryMeta(
@@ -228,9 +359,11 @@ export function findActiveFromAuth(
   const activeKey = Object.keys(auth)[0];
   const activeEntry = activeKey ? auth[activeKey] : undefined;
   const activeUserId = activeEntry?.user_id || activeEntry?.principal_id;
+  if (!activeKey || !activeUserId) return undefined;
   return registry.find(
     (account) =>
-      account.authEntryKey === activeKey && account.userId === activeUserId,
+      account.userId === activeUserId &&
+      (account.authEntryKey === activeKey || account.provider === "codex"),
   );
 }
 

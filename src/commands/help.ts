@@ -14,18 +14,26 @@ export function printHelp(ctx: CliContext): void {
   console.log(
     "  list --no-usage              List accounts without billing requests",
   );
+  console.log("                               * marks the active account");
   console.log("  usage [provider]             Show provider credits");
   console.log("  current [provider]           Show the active account");
   console.log(
     "  status                      Show all provider authentication status",
   );
-  console.log("  doctor                      Diagnose provider setup and accounts");
-  console.log("  login [provider]              Sign in through a provider");
   console.log(
-    "  switch [provider] <number|id|email|alias> Switch the active account",
+    "  doctor                      Diagnose provider setup and accounts",
+  );
+  console.log("  login [provider]              Sign in through a provider");
+  console.log("  switch <provider> <number|id|email|alias> Switch an account");
+  console.log(
+    "                               Switch is supported only for codex and grok",
   );
   console.log(
-    "                               Providers: codex, grok, gemini, freebuff, claude",
+    "                               Providers: codex, grok, gemini, freebuff, agy, claude",
+  );
+  console.log("                               Agy uses the 'agy' CLI");
+  console.log(
+    "                               Agy account switching uses Agy's own OAuth flow",
   );
   console.log("  resume [provider] [session]  Resume a provider session");
   console.log("  continue <provider> <session> Continue a provider session");
@@ -86,17 +94,18 @@ export function printWelcome(ctx: CliContext): void {
 `,
     ),
   );
-  console.log(
-    ctx.color("1;38;5;208", `  Welcome to aihubs-cli v${VERSION}`),
-  );
+  console.log(ctx.color("1;38;5;208", `  Welcome to aihubs-cli v${VERSION}`));
   console.log(
     "  A simple local manager for your AI provider accounts and sessions.\n",
   );
   console.log(ctx.color("1;38;5;208", "  GET STARTED"));
   console.log("  aihubs-cli login             Sign in and save an account");
   console.log("  aihubs-cli list              View your saved accounts");
-  console.log("  aihubs-cli switch <account>  Change the active account");
+  console.log(
+    "  aihubs-cli switch <provider> <account>  Change the active account",
+  );
   console.log("  aihubs-cli status            Check authentication status\n");
+  console.log("  Agy users: install 'agy', then run 'aihubs-cli login agy'.\n");
   console.log(
     ctx.color("1;90", "  Run aihubs-cli --help for all commands and options."),
   );

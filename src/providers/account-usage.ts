@@ -45,6 +45,12 @@ export async function enrichAccountsWithUsage(
   });
   return Promise.all(
     accounts.map(async (account) => {
+      // Google-account Agy/Gemini CLI quota is exposed by the provider's
+      // interactive `/stats` command, not by a supported account billing API.
+      // Do not send these entries through the generic provider endpoint and
+      // mislabel the result as an authentication error.
+      if (account.provider === "agy")
+        return { ...account, usageState: "unavailable" };
       try {
         const snap = await ctx.store.readSnapshot(account.id);
         if (!snap?.entry)
@@ -61,7 +67,8 @@ export async function enrichAccountsWithUsage(
         );
         return { ...account, ...usage };
       } catch (error) {
-        const usageError = error instanceof ProviderUsageError ? error : undefined;
+        const usageError =
+          error instanceof ProviderUsageError ? error : undefined;
         const errorStatus = usageError
           ? usageError.statusCode === 401
             ? "auth expired"

@@ -17,6 +17,7 @@ Supported providers:
 - `grok`
 - `gemini`
 - `freebuff`
+- `agy`
 - `claude`
 
 ## Install
@@ -52,7 +53,7 @@ PS C:\Users\YourName> aihubs-cli
   GET STARTED
   aihubs-cli login             Sign in and save an account
   aihubs-cli list              View your saved accounts
-  aihubs-cli switch <account>  Change the active account
+  aihubs-cli switch <provider> <account>  Change the active account
   aihubs-cli status            Check authentication status
 
   Run aihubs-cli --help for all commands and options.
@@ -66,12 +67,14 @@ aihubs-cli login codex
 aihubs-cli login grok
 aihubs-cli login gemini
 aihubs-cli login freebuff
+aihubs-cli login agy
 aihubs-cli login claude
 
 # List accounts
 aihubs-cli list
 aihubs-cli list codex
 aihubs-cli list grok
+aihubs-cli list agy
 aihubs-cli usage codex
 aihubs-cli usage grok
 aihubs-cli session codex
@@ -87,7 +90,6 @@ aihubs-cli doctor
 aihubs-cli clean --all --yes
 aihubs-cli switch codex 01
 aihubs-cli switch grok user@example.com
-aihubs-cli switch 02
 
 # Manage accounts
 aihubs-cli alias set 01 personal
@@ -98,15 +100,23 @@ aihubs-cli import accounts.json
 ```
 
 Account selectors can be row numbers, account IDs, email addresses, or aliases.
+`switch` always requires an explicit provider and uses the global row number
+shown by `list`, for example `aihubs-cli switch codex 04`. `list` can show more
+than one active account because each provider has its own active session.
+Account switching is supported only for `codex` and `grok`.
 Provider-specific forms are supported for `list`, `usage`, `session`, `resume`,
-`current`, and `switch`. `status` always shows all providers. Without a
-provider, other commands use the configured default provider. Use
+and `current`. `status` always shows all providers. Without a provider, other
+commands use the configured default provider. Use
 `aihubs-cli --help` for the complete command list.
 
 ## Account list
 
 The human-readable list includes the row ID, provider, plan, token usage, reset
 date, and last activity:
+
+An asterisk (`*`) marks the active account. Because providers maintain separate
+sessions, `list` may show one active `*` for Codex and another for Grok, Agy, or
+other providers.
 
 ```text
  ID   PROVIDER    ACCOUNT                         PLAN      TOKEN USAGE    RESET AT         LAST ACTIVITY
@@ -140,6 +150,26 @@ aihubs-cli login <provider>
 
 Freebuff login URLs open automatically in the default browser. Other providers
 use their own installed CLI login flow.
+
+### Agy
+
+Google has transitioned consumer Gemini CLI access to Antigravity CLI. Install
+the Antigravity CLI so the `agy` command is available on `PATH`, then sign in
+and manage it with:
+
+```powershell
+agy --version
+aihubs-cli login agy
+aihubs-cli list agy
+aihubs-cli current agy
+```
+
+Agy account emails are discovered from `~/.gemini/google_accounts.json` and
+recent Agy authentication logs. Agy does not expose separate switchable OAuth
+profiles, so `switch agy ...` is not supported; use Agy's own sign-out and
+Google authentication flow to change accounts. Agy quota is shown as
+`Unknown` because its quota panel is interactive and has no supported
+non-interactive billing endpoint.
 
 ## JSON output
 

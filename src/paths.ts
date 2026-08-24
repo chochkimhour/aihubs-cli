@@ -22,6 +22,7 @@ export function resolvePaths(
     grok: path.join(homedir(), ".grok"),
     gemini: path.join(homedir(), ".gemini"),
     freebuff: path.join(homedir(), ".freebuff"),
+    agy: path.join(homedir(), ".antigravity"),
   };
   const providerHome =
     env.PROVIDER_HOME || homes[provider] || path.join(homedir(), ".provider");

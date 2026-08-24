@@ -42,6 +42,10 @@ export const PROVIDER_COMMANDS: Record<string, string> = {
   grok: process.platform === "win32" ? "grok.exe" : "grok",
   gemini: process.platform === "win32" ? "gemini.cmd" : "gemini",
   freebuff: process.platform === "win32" ? "freebuff.cmd" : "freebuff",
+  agy:
+    process.platform === "win32"
+      ? `${process.env.LOCALAPPDATA || ""}\\agy\\bin\\agy.exe`
+      : "agy",
   claude: process.platform === "win32" ? "claude.cmd" : "claude",
 };
 

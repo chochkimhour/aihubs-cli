@@ -139,9 +139,14 @@ export async function cleanCommand(ctx: CliContext): Promise<void> {
 }
 
 async function cleanAllCommand(ctx: CliContext): Promise<void> {
-  const providerHomes = ["codex", "grok", "gemini", "freebuff", "claude"].map(
-    (provider) => resolvePaths(provider).providerHome,
-  );
+  const providerHomes = [
+    "codex",
+    "grok",
+    "gemini",
+    "freebuff",
+    "agy",
+    "claude",
+  ].map((provider) => resolvePaths(provider).providerHome);
   const targets = [
     ctx.paths.registryFile,
     ctx.paths.configFile,

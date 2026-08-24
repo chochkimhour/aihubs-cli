@@ -1,6 +1,6 @@
 import { printAccountTable, printStatusTable } from "../lib/format.js";
 import { providerVersion } from "../providers/spawn.js";
-import { withActiveFlags } from "../store.js";
+import { findActiveFromAuth, withActiveFlags } from "../store.js";
 import { enrichAccountsWithUsage } from "../providers/account-usage.js";
 import type { CliContext } from "../context.js";
 import { PROVIDER_COMMANDS } from "../constants.js";
@@ -27,11 +27,14 @@ export async function listCommand(ctx: CliContext): Promise<void> {
   }
   const r = await ctx.store.registry();
   const activeIds = new Set(
-    snapshots.flatMap(({ a, r: registry }) =>
-      withActiveFlags(a, registry)
-        .filter((item) => item.active)
-        .map((item: any) => item.id),
-    ),
+    snapshots.flatMap(({ a, r: registry }) => {
+      // `withActiveFlags` intentionally falls back to the last-used account
+      // when auth has no active identity. That is useful for `current`, but
+      // incorrect when listing multiple providers: an empty provider auth
+      // file must not make another provider's account look active.
+      const active = findActiveFromAuth(a, registry);
+      return active ? [active.id] : [];
+    }),
   );
   const accounts = r
     .filter((item) => providers.includes(item.provider))
@@ -41,7 +44,7 @@ export async function listCommand(ctx: CliContext): Promise<void> {
     ? accounts
     : await enrichAccountsWithUsage(ctx, accounts);
   if (!ctx.jsonMode) {
-    printAccountTable(ctx, listed, active);
+    printAccountTable(ctx, listed, activeIds);
     return;
   }
   ctx.out({ success: true, active, accounts: listed });
@@ -87,7 +90,9 @@ export async function statusCommand(ctx: CliContext): Promise<void> {
     (item) =>
       typeof item.provider === "string" && PROVIDER_COMMANDS[item.provider],
   );
-  const providerNames = [...new Set(accounts.map((item) => String(item.provider)))];
+  const providerNames = [
+    ...new Set(accounts.map((item) => String(item.provider))),
+  ];
   const providerClis = Object.fromEntries(
     await Promise.all(
       providerNames.map(async (name) => [
@@ -99,7 +104,8 @@ export async function statusCommand(ctx: CliContext): Promise<void> {
   const payload = {
     success: true,
     active: accounts.find((item) => item.active) || null,
-    providerCli: providerClis.codex || Object.values(providerClis)[0] || "not detected",
+    providerCli:
+      providerClis.codex || Object.values(providerClis)[0] || "not detected",
     providerClis,
     authFile: ctx.paths.authFile,
     registry: "synchronized",

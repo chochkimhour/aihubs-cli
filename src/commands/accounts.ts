@@ -22,14 +22,27 @@ export async function switchAccount(
   name?: string,
   provider?: string,
 ): Promise<void> {
+  if (provider && !["codex", "grok"].includes(provider))
+    return ctx.fail(
+      "UNSUPPORTED_PROVIDER_SWITCH",
+      "Account switching is supported only for codex and grok.",
+    );
   const synced = provider
     ? await ctx.store.sync(false, provider)
     : { a: await ctx.store.auth(), r: await syncAllProviderAccounts(ctx) };
   const { a, r } = synced;
-  const target = findAccount(
-    provider ? r.filter((item) => item.provider === provider) : r,
-    name,
-  );
+  const candidates = provider
+    ? r.filter((item) => item.provider === provider)
+    : r;
+  // `list` displays global row numbers. Preserve that numbering when a
+  // provider is supplied, so `switch agy 11` selects row 11 rather than the
+  // eleventh Agy account.
+  const target =
+    provider && name && /^\d+$/.test(name)
+      ? r[Number(name) - 1]?.provider === provider
+        ? r[Number(name) - 1]
+        : undefined
+      : findAccount(candidates, name);
   if (!target)
     return ctx.fail(
       "ACCOUNT_NOT_FOUND",
@@ -38,17 +51,35 @@ export async function switchAccount(
   const snap = await ctx.store.readSnapshot(target.id);
   if (!snap?.entry)
     return ctx.fail("CORRUPT_SNAPSHOT", "Selected account snapshot is invalid");
-  await fs.mkdir(ctx.paths.backupsDir, { recursive: true });
-  if (await fs.stat(ctx.paths.authFile).catch(() => undefined))
-    await fs.copyFile(ctx.paths.authFile, backupAuthPath(ctx.paths));
-  await fs.mkdir(ctx.paths.providerHome, { recursive: true });
-  const next: Json = { ...a, [snap.key]: snap.entry };
+  // An unqualified switch discovers the target across providers. Use the
+  // target provider's paths for the actual auth-file replacement; ctx.paths
+  // points at the default provider in that form.
+  const targetPaths = resolvePaths(String(target.provider || "default"));
+  const targetStore = new AccountStore(targetPaths);
+  const targetAuth = provider
+    ? a
+    : await targetStore.auth(String(target.provider || "default"));
+  await fs.mkdir(targetPaths.backupsDir, { recursive: true });
+  if (await fs.stat(targetPaths.authFile).catch(() => undefined))
+    await fs.copyFile(targetPaths.authFile, backupAuthPath(targetPaths));
+  await fs.mkdir(targetPaths.providerHome, { recursive: true });
+  // Codex treats the first auth entry as the active account. Put the selected
+  // snapshot first; appending it would leave the previous account active.
+  const { [snap.key]: _previousSelected, ...otherAuth } = targetAuth;
+  const selectedEntry =
+    provider === "codex"
+      ? {
+          ...snap.entry,
+          plan_type: snap.entry.plan_type || snap.entry.plan || "free",
+        }
+      : snap.entry;
+  const next: Json = { [snap.key]: selectedEntry, ...otherAuth };
   for (const k of Object.keys(next))
     if (k !== snap.key && r.some((item) => item.authEntryKey === k))
       delete next[k];
-  const tmp = ctx.paths.authFile + ".tmp-" + process.pid;
+  const tmp = targetPaths.authFile + ".tmp-" + process.pid;
   await writeJson(tmp, next);
-  await fs.rename(tmp, ctx.paths.authFile);
+  await fs.rename(tmp, targetPaths.authFile);
   target.lastUsedAt = new Date().toISOString();
   target.lastActiveAt = target.lastUsedAt;
   await ctx.store.saveRegistry(r);
@@ -64,14 +95,16 @@ export async function switchAccount(
 
 export async function switchCommand(ctx: CliContext): Promise<void> {
   const possibleProvider = ctx.positional[1]?.toLowerCase();
-  const provider = possibleProvider && PROVIDER_COMMANDS[possibleProvider]
-    ? possibleProvider
-    : undefined;
-  await switchAccount(
-    ctx,
-    provider ? ctx.positional[2] : ctx.positional[1],
-    provider,
-  );
+  const provider =
+    possibleProvider && PROVIDER_COMMANDS[possibleProvider]
+      ? possibleProvider
+      : undefined;
+  if (!provider)
+    return ctx.fail(
+      "INVALID_USAGE",
+      "Use switch <provider> <number|id|email|alias>, for example: switch codex 05",
+    );
+  await switchAccount(ctx, ctx.positional[2], provider);
 }
 
 export async function moveCommand(ctx: CliContext): Promise<void> {
@@ -228,9 +261,7 @@ export async function removeCommand(ctx: CliContext): Promise<void> {
   }
   const removed = found.map((item) => item.id);
   if (ctx.jsonMode) return ctx.out({ success: true, removed });
-  const labels = found.map(
-    (item) => item.email || item.alias || item.id,
-  );
+  const labels = found.map((item) => item.email || item.alias || item.id);
   console.log(
     ctx.color(
       "1;32",

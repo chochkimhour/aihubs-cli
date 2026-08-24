@@ -1,7 +1,7 @@
 import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { exists } from "../lib/json.js";
+import { exists, readJson, writeJson } from "../lib/json.js";
 import { findActiveFromAuth } from "../store.js";
 import { runProvider } from "../providers/spawn.js";
 import { PROVIDER_COMMANDS } from "../constants.js";
@@ -39,9 +39,13 @@ export async function loginCommand(ctx: CliContext): Promise<void> {
       : `Login through '${providerCommand || "the default provider CLI"}' failed with exit code ${code}. Verify the provider CLI is installed and try again.`;
   if (providerName === "codex")
     await runCodexLoginIsolated(ctx, loginArgs, failMessage);
-  else
-    await runProvider(["login", ...loginArgs], failMessage, providerCommand);
+  else if (providerName === "agy")
+    // Agy starts its OAuth flow on launch; it does not implement a `login`
+    // subcommand like Codex and Gemini.
+    await runProvider(loginArgs, failMessage, providerCommand);
+  else await runProvider(["login", ...loginArgs], failMessage, providerCommand);
   const { a, r } = await ctx.store.sync(false, providerName || "default");
+  if (providerName === "agy") await preserveAgyAccountHistory();
   const active = findActiveFromAuth(a, r);
   if (active) {
     active.lastUsedAt = new Date().toISOString();
@@ -51,6 +55,19 @@ export async function loginCommand(ctx: CliContext): Promise<void> {
   if (!ctx.jsonMode)
     console.log(ctx.color("1;32", "✓ Login completed and account saved."));
   else ctx.out({ success: true });
+}
+
+async function preserveAgyAccountHistory(): Promise<void> {
+  const file = path.join(os.homedir(), ".gemini", "google_accounts.json");
+  const data = await readJson(file, {});
+  const active = typeof data?.active === "string" ? data.active : undefined;
+  if (!active) return;
+  const old = Array.isArray(data.old) ? data.old : [];
+  await writeJson(file, {
+    ...data,
+    active,
+    old: [...new Set([...old, active])].filter((email) => email !== active),
+  });
 }
 
 async function runCodexLoginIsolated(
@@ -65,7 +82,11 @@ async function runCodexLoginIsolated(
   const previousCodexHome = process.env.CODEX_HOME;
   process.env.CODEX_HOME = scratchHome;
   try {
-    await runProvider(["login", ...loginArgs], failMessage, PROVIDER_COMMANDS.codex);
+    await runProvider(
+      ["login", ...loginArgs],
+      failMessage,
+      PROVIDER_COMMANDS.codex,
+    );
     const scratchAuth = path.join(scratchHome, "auth.json");
     const raw = JSON.parse(await fs.readFile(scratchAuth, "utf8"));
     const accountId = raw?.tokens?.account_id;

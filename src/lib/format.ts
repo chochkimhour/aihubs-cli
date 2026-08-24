@@ -99,7 +99,7 @@ function formatPlan(value: unknown): string {
 export function printAccountTable(
   ctx: CliContext,
   accounts: Json[],
-  active?: string,
+  active?: string | Set<string>,
 ): void {
   const header =
     " ID  ".padEnd(6) +
@@ -111,8 +111,11 @@ export function printAccountTable(
     "LAST ACTIVITY";
   console.log(ctx.color("1;38;5;208", header));
   console.log("-".repeat(header.length));
+  const activeIds =
+    active instanceof Set ? active : new Set(active ? [active] : []);
   for (const [index, account] of accounts.entries()) {
-    const marker = account.id === active ? "*" : " ";
+    const isActive = activeIds.has(account.id);
+    const marker = isActive ? "*" : " ";
     const number = String(index + 1).padStart(2, "0");
     const provider = String(account.provider || "-")
       .slice(0, 11)
@@ -125,7 +128,9 @@ export function printAccountTable(
     );
     const fiveHour =
       (account.errorStatus
-        ? String(account.errorStatus).toLowerCase().replace(/^./, (char) => char.toUpperCase())
+        ? String(account.errorStatus)
+            .toLowerCase()
+            .replace(/^./, (char) => char.toUpperCase())
         : undefined) ||
       String(
         account.fiveHourUsage || account.usage5h || formatUsageUsed(account),
@@ -140,10 +145,10 @@ export function printAccountTable(
     const resetCell = reset.slice(0, 15).padEnd(16);
     const last = formatLastActivity(account);
     const row = `${marker} ${number} ${provider}${name}${plan}${fiveHourCell}${resetCell}${last}`;
-    console.log(account.id === active ? ctx.color("1;32", row) : row);
+    console.log(isActive ? ctx.color("1;32", row) : row);
   }
   console.log(
-    `\n${accounts.length} account${accounts.length === 1 ? "" : "s"}`,
+    `\n${accounts.length} account${accounts.length === 1 ? "" : "s"}  |  * Active account`,
   );
 }
 
@@ -173,7 +178,9 @@ export function printStatusTable(
   for (const [index, account] of accounts.entries()) {
     const marker = account.active ? "*" : " ";
     const number = String(index + 1).padStart(2, "0");
-    const provider = String(account.provider || "-").slice(0, 11).padEnd(12);
+    const provider = String(account.provider || "-")
+      .slice(0, 11)
+      .padEnd(12);
     const name = String(account.email || account.displayName || account.id)
       .slice(0, 31)
       .padEnd(32);
@@ -185,5 +192,4 @@ export function printStatusTable(
     const row = `${marker} ${number} ${provider}${name}${status}${authMode}`;
     console.log(account.active ? ctx.color("1;32", row) : row);
   }
-  console.log(`\n${accounts.length} account${accounts.length === 1 ? "" : "s"}`);
 }

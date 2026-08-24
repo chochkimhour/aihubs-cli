@@ -3,6 +3,8 @@ import {
   type ChildProcess,
   type SpawnOptions,
 } from "node:child_process";
+import path from "node:path";
+import { promises as fs } from "node:fs";
 import { PROVIDER_COMMAND, providerNotFoundMessage } from "../constants.js";
 
 export function spawnProvider(
@@ -15,11 +17,17 @@ export function spawnProvider(
   return spawn(command, argv, { ...options, shell: options.shell ?? useShell });
 }
 
-export async function providerVersion(command = PROVIDER_COMMAND): Promise<string> {
+export async function providerVersion(
+  command = PROVIDER_COMMAND,
+): Promise<string> {
   return new Promise((resolve) => {
-    const child = spawnProvider(["--version"], {
-      stdio: ["ignore", "pipe", "ignore"],
-    }, command);
+    const child = spawnProvider(
+      ["--version"],
+      {
+        stdio: ["ignore", "pipe", "ignore"],
+      },
+      command,
+    );
     let output = "";
     child.stdout?.on("data", (chunk) => (output += chunk));
     child.on("close", (code) =>
@@ -55,6 +63,11 @@ export function runProvider(
 }
 
 function commandExists(command: string): Promise<boolean> {
+  if (path.isAbsolute(command))
+    return fs
+      .access(command)
+      .then(() => true)
+      .catch(() => false);
   const lookup = process.platform === "win32" ? "where.exe" : "which";
   return new Promise((resolve) => {
     const child = spawn(lookup, [command], {
