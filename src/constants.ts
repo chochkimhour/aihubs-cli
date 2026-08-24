@@ -52,6 +52,7 @@ export const GLOBAL_FLAGS = new Set([
   "--help",
   "--version",
   "--no-usage",
+  "--no-update-check",
   "--include-credentials",
   "--confirm-sensitive-export",
   "--backups",

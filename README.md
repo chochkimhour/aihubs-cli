@@ -79,11 +79,11 @@ aihubs-cli resume grok <session-id-or-title>
 aihubs-cli continue codex <session-id-or-title>
 aihubs-cli continue grok <session-id-or-title>
 aihubs-cli current codex
-aihubs-cli status grok
 
 # Inspect and switch accounts
 aihubs-cli current
 aihubs-cli status
+aihubs-cli doctor
 aihubs-cli switch codex 01
 aihubs-cli switch grok user@example.com
 aihubs-cli switch 02
@@ -98,9 +98,9 @@ aihubs-cli import accounts.json
 
 Account selectors can be row numbers, account IDs, email addresses, or aliases.
 Provider-specific forms are supported for `list`, `usage`, `session`, `resume`,
-`current`, `status`, and `switch`. Without a provider, the command uses the
-configured default provider. Use `aihubs-cli --help` for the complete command
-list.
+`current`, and `switch`. `status` always shows all providers. Without a
+provider, other commands use the configured default provider. Use
+`aihubs-cli --help` for the complete command list.
 
 ## Account list
 
@@ -108,10 +108,10 @@ The human-readable list includes the row ID, provider, plan, short-window
 usage, and last activity:
 
 ```text
- ID   PROVIDER    ACCOUNT                         PLAN      TOKEN USAGE             LAST ACTIVITY
+ ID   PROVIDER    ACCOUNT                         PLAN      TOKEN USAGE    RESET AT         LAST ACTIVITY
 -------------------------------------------------------------------------------------------------------------------------
-  01 codex       account@example.com             Go        9% | Sep 22             Aug 24, 2026
-  02 codex       another@example.com             Free      401                     Aug 23, 2026
+  01 codex       account@example.com             Go        9%             Sep 22, 2026     Aug 24, 2026
+  02 codex       another@example.com             Free      401            -                Aug 23, 2026
 ```
 
 For Codex accounts, usage is retrieved independently for every account from the
@@ -148,7 +148,13 @@ Use `--json` for scripts and integrations:
 aihubs-cli --json list
 aihubs-cli --json list codex
 aihubs-cli --json status
+aihubs-cli --json doctor
+aihubs-cli --no-update-check list
 ```
+
+`doctor` checks installed provider CLIs, saved account counts, and basic
+authentication metadata. Use `--no-update-check` to skip the daily npm update
+notification for a command.
 
 Normal JSON output redacts access tokens, refresh tokens, API keys, cookies,
 authorization headers, and other sensitive values. Credential export requires

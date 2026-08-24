@@ -61,16 +61,22 @@ export async function enrichAccountsWithUsage(
         );
         return { ...account, ...usage };
       } catch (error) {
+        const usageError = error instanceof ProviderUsageError ? error : undefined;
+        const errorStatus = usageError
+          ? usageError.statusCode === 401
+            ? "auth expired"
+            : usageError.statusCode === 403
+              ? "access denied"
+              : usageError.statusCode === 429
+                ? "rate limited"
+                : usageError.kind === "unavailable"
+                  ? "unavailable"
+                  : usageError.kind
+          : "unknown";
         return {
           ...account,
           usageState: "unknown",
-          errorStatus:
-            error instanceof ProviderUsageError
-              ? String(
-                  error.statusCode ||
-                    (error.kind === "auth" ? "AUTH" : "UNKNOWN"),
-                )
-              : "UNKNOWN",
+          errorStatus,
         };
       }
     }),

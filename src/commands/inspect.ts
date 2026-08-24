@@ -82,8 +82,7 @@ export async function currentCommand(ctx: CliContext): Promise<void> {
 }
 
 export async function statusCommand(ctx: CliContext): Promise<void> {
-  const provider = ctx.commandArgs()[0]?.toLowerCase();
-  const { a, r } = await ctx.store.sync(true, provider || "default");
+  const { a, r } = await ctx.store.sync(true, "default");
   const accounts = withActiveFlags(a, r).filter(
     (item) =>
       typeof item.provider === "string" && PROVIDER_COMMANDS[item.provider],
@@ -100,7 +99,7 @@ export async function statusCommand(ctx: CliContext): Promise<void> {
   const payload = {
     success: true,
     active: accounts.find((item) => item.active) || null,
-    providerCli: providerClis[provider || "codex"] || "not detected",
+    providerCli: providerClis.codex || Object.values(providerClis)[0] || "not detected",
     providerClis,
     authFile: ctx.paths.authFile,
     registry: "synchronized",

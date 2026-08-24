@@ -115,6 +115,7 @@ test("formats token and reset fields defensively", () => {
   assert.equal(formatUsageUsed({ used: 151 }), "151 used");
   assert.equal(formatUsageUsed({ used: 250, limit: 500 }), "50% used");
   assert.equal(formatUsageUsed({}), "Unknown");
+  assert.match(formatLastActivity({ lastUsedAt: "2026-08-24T12:00:00Z" }), /Aug 24, 2026/);
 });
 
 test("saves and clears a manual reset time", async () => {

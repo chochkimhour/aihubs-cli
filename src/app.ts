@@ -24,6 +24,7 @@ import {
 } from "./commands/inspect.js";
 import { resumeCommand, sessionCommand } from "./commands/sessions.js";
 import { usageCommand } from "./commands/usage.js";
+import { doctorCommand } from "./commands/doctor.js";
 import { checkForUpdate } from "./update-check.js";
 
 type CommandHandler = (ctx: CliContext) => Promise<void> | void;
@@ -48,6 +49,7 @@ const commands: Record<string, CommandHandler> = {
   repair: repairCommand,
   config: configCommand,
   watch: watchCommand,
+  doctor: doctorCommand,
   help: printHelp,
 };
 
@@ -60,8 +62,48 @@ export async function dispatch(ctx: CliContext): Promise<void> {
     return ctx.out(`aihubs-cli ${VERSION}`);
   if (!hasCommand && !ctx.jsonMode) return printWelcome(ctx);
   const handler = commands[cmd];
-  if (!handler) ctx.fail("UNKNOWN_COMMAND", `Unknown command '${cmd}'.`);
+  if (!handler) {
+    const suggestion = closestCommand(cmd);
+    ctx.fail(
+      "UNKNOWN_COMMAND",
+      `Unknown command '${cmd}'.${suggestion ? ` Did you mean '${suggestion}'?` : ""}`,
+    );
+  }
   await handler(ctx);
+}
+
+function closestCommand(input: string): string | undefined {
+  const candidates = Object.keys(commands);
+  let best: string | undefined;
+  let bestDistance = Infinity;
+  for (const candidate of candidates) {
+    const distance = editDistance(input.toLowerCase(), candidate);
+    if (distance < bestDistance) {
+      best = candidate;
+      bestDistance = distance;
+    }
+  }
+  return bestDistance <= Math.max(2, Math.floor(input.length / 2))
+    ? best
+    : undefined;
+}
+
+function editDistance(a: string, b: string): number {
+  const row = Array.from({ length: b.length + 1 }, (_, index) => index);
+  for (let i = 1; i <= a.length; i++) {
+    let previous = row[0];
+    row[0] = i;
+    for (let j = 1; j <= b.length; j++) {
+      const current = row[j];
+      row[j] = Math.min(
+        row[j] + 1,
+        row[j - 1] + 1,
+        previous + (a[i - 1] === b[j - 1] ? 0 : 1),
+      );
+      previous = current;
+    }
+  }
+  return row[b.length];
 }
 
 export async function run(ctx: CliContext = createContext()): Promise<void> {

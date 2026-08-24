@@ -31,6 +31,7 @@ function showNotice(ctx: CliContext, latest?: string): void {
 export async function checkForUpdate(ctx: CliContext): Promise<void> {
   if (
     ctx.jsonMode ||
+    ctx.hasFlag("--no-update-check") ||
     ctx.hasFlag("--version") ||
     ctx.rawArgs.includes("-v") ||
     ctx.hasFlag("--help") ||

@@ -76,6 +76,7 @@ function formatCompactReset(value: unknown): string {
   const day = date.toLocaleDateString("en-US", {
     day: "numeric",
     month: "short",
+    year: "numeric",
   });
   return day;
 }
@@ -105,7 +106,8 @@ export function printAccountTable(
     "PROVIDER".padEnd(12) +
     "ACCOUNT".padEnd(32) +
     "PLAN".padEnd(10) +
-    "TOKEN USAGE".padEnd(24) +
+    "TOKEN USAGE".padEnd(16) +
+    "RESET AT".padEnd(16) +
     "LAST ACTIVITY";
   console.log(ctx.color("1;38;5;208", header));
   console.log("-".repeat(header.length));
@@ -122,7 +124,9 @@ export function printAccountTable(
       10,
     );
     const fiveHour =
-      account.errorStatus ||
+      (account.errorStatus
+        ? String(account.errorStatus).toLowerCase().replace(/^./, (char) => char.toUpperCase())
+        : undefined) ||
       String(
         account.fiveHourUsage || account.usage5h || formatUsageUsed(account),
       );
@@ -132,11 +136,10 @@ export function printAccountTable(
         account.usageResetAt ||
         account.manualResetAt,
     );
-    const fiveHourCell = `${fiveHour}${reset === "-" ? "" : ` | ${reset}`}`
-      .slice(0, 23)
-      .padEnd(24);
+    const fiveHourCell = fiveHour.slice(0, 15).padEnd(16);
+    const resetCell = reset.slice(0, 15).padEnd(16);
     const last = formatLastActivity(account);
-    const row = `${marker} ${number} ${provider}${name}${plan}${fiveHourCell}${last}`;
+    const row = `${marker} ${number} ${provider}${name}${plan}${fiveHourCell}${resetCell}${last}`;
     console.log(account.id === active ? ctx.color("1;32", row) : row);
   }
   console.log(
@@ -158,7 +161,10 @@ export function printStatusTable(
   console.log(ctx.color("1;38;5;208", "STATUS"));
   console.log(
     `Provider CLI: ${Object.entries(providerClis)
-      .map(([provider, version]) => `${provider} ${version}`)
+      .map(([provider, version]) => {
+        const match = version.match(/\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?/);
+        return `${provider} ${match?.[0] || version}`;
+      })
       .join(", ")}`,
   );
   console.log("Registry: synchronized\n");
@@ -171,7 +177,10 @@ export function printStatusTable(
     const name = String(account.email || account.displayName || account.id)
       .slice(0, 31)
       .padEnd(32);
-    const status = String(account.status || "UNKNOWN").padEnd(10);
+    const status = String(account.status || "UNKNOWN")
+      .toLowerCase()
+      .replace(/^./, (char) => char.toUpperCase())
+      .padEnd(10);
     const authMode = String(account.authMode || "-");
     const row = `${marker} ${number} ${provider}${name}${status}${authMode}`;
     console.log(account.active ? ctx.color("1;32", row) : row);

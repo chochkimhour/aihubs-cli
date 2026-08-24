@@ -17,8 +17,9 @@ export function printHelp(ctx: CliContext): void {
   console.log("  usage [provider]             Show provider credits");
   console.log("  current [provider]           Show the active account");
   console.log(
-    "  status [provider]            Show authentication and CLI status",
+    "  status                      Show all provider authentication status",
   );
+  console.log("  doctor                      Diagnose provider setup and accounts");
   console.log("  login [provider]              Sign in through a provider");
   console.log(
     "  switch [provider] <number|id|email|alias> Switch the active account",
@@ -64,6 +65,7 @@ export function printHelp(ctx: CliContext): void {
   console.log("  --json                       Output machine-readable JSON");
   console.log("  --yes                        Confirm destructive operations");
   console.log("  --no-color                   Disable terminal colors");
+  console.log("  --no-update-check            Skip update notifications");
   console.log("  --version                    Show the version");
   console.log("  --help                       Show this help\n");
 }
@@ -83,7 +85,9 @@ export function printWelcome(ctx: CliContext): void {
 `,
     ),
   );
-  console.log(ctx.color("1;32", `  Welcome to aihubs-cli v${VERSION}`));
+  console.log(
+    ctx.color("1;38;5;208", `  Welcome to aihubs-cli v${VERSION}`),
+  );
   console.log(
     "  A simple local manager for your AI provider accounts and sessions.\n",
   );
