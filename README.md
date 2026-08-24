@@ -15,9 +15,9 @@ Supported providers:
 
 - `codex`
 - `grok`
-- `freebuff`
 - `agy`
 - `claude`
+- `freebuff`
 
 ## Install
 
@@ -52,7 +52,7 @@ PS C:\Users\YourName> aihubs-cli
   GET STARTED
   aihubs-cli login             Sign in and save an account
   aihubs-cli list              View your saved accounts
-  aihubs-cli switch <provider> <account>  Change the active account
+  aihubs-cli switch            Change the active account
   aihubs-cli status            Check authentication status
 
   Run aihubs-cli --help for all commands and options.
@@ -73,8 +73,6 @@ aihubs-cli list
 aihubs-cli list codex
 aihubs-cli list grok
 aihubs-cli list agy
-aihubs-cli usage codex
-aihubs-cli usage grok
 aihubs-cli session codex
 aihubs-cli resume grok <session-id-or-title>
 aihubs-cli continue codex <session-id-or-title>
@@ -102,8 +100,8 @@ Account selectors can be row numbers, account IDs, email addresses, or aliases.
 shown by `list`, for example `aihubs-cli switch codex 04`. `list` can show more
 than one active account because each provider has its own active session.
 Account switching is supported only for `codex` and `grok`.
-Provider-specific forms are supported for `list`, `usage`, `session`, `resume`,
-and `current`. `status` always shows all providers. Without a provider, other
+Provider-specific forms are supported for `list`, `session`, `resume`, and
+`current`. `status` always shows all providers. Without a provider, other
 commands use the configured default provider. Use
 `aihubs-cli --help` for the complete command list.
 
@@ -230,8 +228,9 @@ Verify the provider CLI is installed and available on `PATH`:
 ```powershell
 codex --version
 grok --version
-freebuff --version
+agy --version
 claude --version
+freebuff --version
 ```
 
 If a Codex account displays `401`, authenticate that account again:

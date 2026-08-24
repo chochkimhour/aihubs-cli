@@ -23,7 +23,6 @@ import {
   statusCommand,
 } from "./commands/inspect.js";
 import { resumeCommand, sessionCommand } from "./commands/sessions.js";
-import { usageCommand } from "./commands/usage.js";
 import { doctorCommand } from "./commands/doctor.js";
 import { checkForUpdate } from "./update-check.js";
 
@@ -31,7 +30,6 @@ type CommandHandler = (ctx: CliContext) => Promise<void> | void;
 
 const commands: Record<string, CommandHandler> = {
   login: loginCommand,
-  usage: usageCommand,
   list: listCommand,
   current: currentCommand,
   status: statusCommand,

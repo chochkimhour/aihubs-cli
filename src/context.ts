@@ -38,7 +38,6 @@ export function createContext(
     positional[0] === "login" ||
     positional[0] === "list" ||
     positional[0] === "switch" ||
-    positional[0] === "usage" ||
     positional[0] === "session" ||
     positional[0] === "resume" ||
     positional[0] === "continue" ||

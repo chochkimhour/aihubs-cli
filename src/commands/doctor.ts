@@ -41,7 +41,9 @@ export async function doctorCommand(ctx: CliContext): Promise<void> {
   console.log(ctx.color("1;38;5;208", "DOCTOR"));
   console.log(ctx.color("1;38;5;208", "Provider CLIs"));
   for (const name of providers)
-    console.log(`  ${name.padEnd(10)} ${cliVersions[name]}`);
+    console.log(
+      `  ${name.padEnd(10)} ${String(cliVersions[name]).replace(/\s*\([^)]*\)/g, "")}`,
+    );
   console.log(`\nSaved accounts: ${accounts.length}`);
   console.log(ctx.color("1;38;5;208", "Accounts by provider"));
   for (const name of providers)

@@ -15,7 +15,6 @@ export function printHelp(ctx: CliContext): void {
     "  list --no-usage              List accounts without billing requests",
   );
   console.log("                               * marks the active account");
-  console.log("  usage [provider]             Show provider credits");
   console.log("  current [provider]           Show the active account");
   console.log(
     "  status                      Show all provider authentication status",
@@ -101,11 +100,8 @@ export function printWelcome(ctx: CliContext): void {
   console.log(ctx.color("1;38;5;208", "  GET STARTED"));
   console.log("  aihubs-cli login             Sign in and save an account");
   console.log("  aihubs-cli list              View your saved accounts");
-  console.log(
-    "  aihubs-cli switch <provider> <account>  Change the active account",
-  );
+  console.log("  aihubs-cli switch            Change the active account");
   console.log("  aihubs-cli status            Check authentication status\n");
-  console.log("  Agy users: install 'agy', then run 'aihubs-cli login agy'.\n");
   console.log(
     ctx.color("1;90", "  Run aihubs-cli --help for all commands and options."),
   );
