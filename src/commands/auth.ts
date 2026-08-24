@@ -1,8 +1,12 @@
+import { promises as fs } from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { exists } from "../lib/json.js";
 import { findActiveFromAuth } from "../store.js";
 import { runProvider } from "../providers/spawn.js";
 import { PROVIDER_COMMANDS } from "../constants.js";
 import type { CliContext } from "../context.js";
+import { resolvePaths } from "../paths.js";
 
 export async function loginCommand(ctx: CliContext): Promise<void> {
   const extra = ctx.commandArgs();
@@ -29,14 +33,14 @@ export async function loginCommand(ctx: CliContext): Promise<void> {
     : true;
   if (!supported)
     ctx.fail("UNSUPPORTED_FLAG", `Unsupported login flag '${loginArgs[0]}'.`);
-  await runProvider(
-    ["login", ...loginArgs],
-    (code) =>
-      providerName === "gemini"
-        ? `Gemini CLI login failed with exit code ${code}. Google ended personal-account Gemini CLI sign-in on June 18, 2026. Use a Gemini API key, an eligible enterprise account, or migrate to Antigravity: https://antigravity.google`
-        : `Login through '${providerCommand || "the default provider CLI"}' failed with exit code ${code}. Verify the provider CLI is installed and try again.`,
-    providerCommand,
-  );
+  const failMessage = (code: number | null) =>
+    providerName === "gemini"
+      ? `Gemini CLI login failed with exit code ${code}. Google ended personal-account Gemini CLI sign-in on June 18, 2026. Use a Gemini API key, an eligible enterprise account, or migrate to Antigravity: https://antigravity.google`
+      : `Login through '${providerCommand || "the default provider CLI"}' failed with exit code ${code}. Verify the provider CLI is installed and try again.`;
+  if (providerName === "codex")
+    await runCodexLoginIsolated(ctx, loginArgs, failMessage);
+  else
+    await runProvider(["login", ...loginArgs], failMessage, providerCommand);
   const { a, r } = await ctx.store.sync(false, providerName || "default");
   const active = findActiveFromAuth(a, r);
   if (active) {
@@ -47,4 +51,37 @@ export async function loginCommand(ctx: CliContext): Promise<void> {
   if (!ctx.jsonMode)
     console.log(ctx.color("1;32", "✓ Login completed and account saved."));
   else ctx.out({ success: true });
+}
+
+async function runCodexLoginIsolated(
+  ctx: CliContext,
+  loginArgs: string[],
+  failMessage: (code: number | null) => string,
+): Promise<void> {
+  const realPaths = resolvePaths("codex");
+  const scratchHome = await fs.mkdtemp(
+    path.join(os.tmpdir(), "aihubs-codex-login-"),
+  );
+  const previousCodexHome = process.env.CODEX_HOME;
+  process.env.CODEX_HOME = scratchHome;
+  try {
+    await runProvider(["login", ...loginArgs], failMessage, PROVIDER_COMMANDS.codex);
+    const scratchAuth = path.join(scratchHome, "auth.json");
+    const raw = JSON.parse(await fs.readFile(scratchAuth, "utf8"));
+    const accountId = raw?.tokens?.account_id;
+    await fs.mkdir(realPaths.providerHome, { recursive: true });
+    await fs.copyFile(scratchAuth, realPaths.authFile);
+    if (typeof accountId === "string") {
+      const accountDir = path.join(realPaths.providerHome, "accounts");
+      await fs.mkdir(accountDir, { recursive: true });
+      await fs.copyFile(
+        scratchAuth,
+        path.join(accountDir, `${accountId}.auth.json`),
+      );
+    }
+  } finally {
+    if (previousCodexHome === undefined) delete process.env.CODEX_HOME;
+    else process.env.CODEX_HOME = previousCodexHome;
+    await fs.rm(scratchHome, { recursive: true, force: true });
+  }
 }
