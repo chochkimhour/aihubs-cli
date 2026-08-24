@@ -84,6 +84,7 @@ aihubs-cli current codex
 aihubs-cli current
 aihubs-cli status
 aihubs-cli doctor
+aihubs-cli clean --all --yes
 aihubs-cli switch codex 01
 aihubs-cli switch grok user@example.com
 aihubs-cli switch 02

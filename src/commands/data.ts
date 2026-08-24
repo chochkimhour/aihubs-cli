@@ -4,7 +4,7 @@ import crypto from "node:crypto";
 import path from "node:path";
 import { exists, readJson, writeJson } from "../lib/json.js";
 import { redact } from "../lib/redact.js";
-import { snapshotPath } from "../paths.js";
+import { resolvePaths, snapshotPath } from "../paths.js";
 import type { CliContext } from "../context.js";
 import type { Json } from "../types.js";
 
@@ -101,6 +101,7 @@ export async function repairCommand(ctx: CliContext): Promise<void> {
 
 export async function cleanCommand(ctx: CliContext): Promise<void> {
   await ctx.store.ensure();
+  if (ctx.hasFlag("--all")) return cleanAllCommand(ctx);
   const r = await ctx.store.registry();
   const known = new Set(r.map((item) => `${item.id}.json`));
   const files = await fs.readdir(ctx.paths.accountsDir);
@@ -134,6 +135,35 @@ export async function cleanCommand(ctx: CliContext): Promise<void> {
         ? backupFiles
         : { preview: backupFiles }
       : undefined,
+  });
+}
+
+async function cleanAllCommand(ctx: CliContext): Promise<void> {
+  const providerHomes = ["codex", "grok", "gemini", "freebuff", "claude"].map(
+    (provider) => resolvePaths(provider).providerHome,
+  );
+  const targets = [
+    ctx.paths.registryFile,
+    ctx.paths.configFile,
+    ctx.paths.accountsDir,
+    ctx.paths.usageCacheDir,
+    ctx.paths.backupsDir,
+    ...providerHomes.flatMap((home) => [
+      path.join(home, "auth.json"),
+      path.join(home, "accounts"),
+    ]),
+  ];
+  if (ctx.yes) {
+    await Promise.all(
+      targets.map((target) => fs.rm(target, { recursive: true, force: true })),
+    );
+  }
+  ctx.out({
+    success: true,
+    command: "clean",
+    all: true,
+    preview: !ctx.yes,
+    removed: ctx.yes ? targets : [],
   });
 }
 

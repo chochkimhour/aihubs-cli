@@ -50,6 +50,7 @@ export function printHelp(ctx: CliContext): void {
     "  import <file>                Import a validated account export",
   );
   console.log("  clean                        Preview cleanup actions");
+  console.log("  clean --all --yes            Remove all saved account data");
   console.log(
     "  clean --backups --yes       Remove saved authentication backups",
   );
