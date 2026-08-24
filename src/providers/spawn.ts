@@ -15,11 +15,11 @@ export function spawnProvider(
   return spawn(command, argv, { ...options, shell: options.shell ?? useShell });
 }
 
-export async function providerVersion(): Promise<string> {
+export async function providerVersion(command = PROVIDER_COMMAND): Promise<string> {
   return new Promise((resolve) => {
     const child = spawnProvider(["--version"], {
       stdio: ["ignore", "pipe", "ignore"],
-    });
+    }, command);
     let output = "";
     child.stdout?.on("data", (chunk) => (output += chunk));
     child.on("close", (code) =>

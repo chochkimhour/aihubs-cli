@@ -5,9 +5,9 @@ export function printHelp(ctx: CliContext): void {
   console.log(
     ctx.color("1;38;5;208", "\naihubs-cli — AI provider account manager\n"),
   );
-  console.log(ctx.color("1;33", "USAGE"));
+  console.log(ctx.color("1;38;5;208", "USAGE"));
   console.log("  aihubs-cli <command> [options]\n");
-  console.log(ctx.color("1;33", "ACCOUNT COMMANDS"));
+  console.log(ctx.color("1;38;5;208", "ACCOUNT COMMANDS"));
   console.log(
     "  list [provider]              List accounts, optionally filtered by provider",
   );
@@ -39,7 +39,7 @@ export function printHelp(ctx: CliContext): void {
   console.log("  alias clear <account>        Remove an account alias\n");
   console.log("  reset set <account> <time>   Set a known account reset time");
   console.log("  reset clear <account>        Clear a saved reset time\n");
-  console.log(ctx.color("1;33", "DATA COMMANDS"));
+  console.log(ctx.color("1;38;5;208", "DATA COMMANDS"));
   console.log("  export <file>                Export account metadata");
   console.log("  export <file> --include-credentials");
   console.log(
@@ -60,7 +60,7 @@ export function printHelp(ctx: CliContext): void {
   console.log(
     "  watch                        Watch for auth file changes (Ctrl-C to stop)\n",
   );
-  console.log(ctx.color("1;33", "OPTIONS"));
+  console.log(ctx.color("1;38;5;208", "OPTIONS"));
   console.log("  --json                       Output machine-readable JSON");
   console.log("  --yes                        Confirm destructive operations");
   console.log("  --no-color                   Disable terminal colors");
@@ -87,7 +87,7 @@ export function printWelcome(ctx: CliContext): void {
   console.log(
     "  A simple local manager for your AI provider accounts and sessions.\n",
   );
-  console.log(ctx.color("1;33", "  GET STARTED"));
+  console.log(ctx.color("1;38;5;208", "  GET STARTED"));
   console.log("  aihubs-cli login             Sign in and save an account");
   console.log("  aihubs-cli list              View your saved accounts");
   console.log("  aihubs-cli switch <account>  Change the active account");

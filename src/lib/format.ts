@@ -143,3 +143,38 @@ export function printAccountTable(
     `\n${accounts.length} account${accounts.length === 1 ? "" : "s"}`,
   );
 }
+
+export function printStatusTable(
+  ctx: CliContext,
+  accounts: Json[],
+  providerClis: Record<string, string>,
+): void {
+  const header =
+    " ID  ".padEnd(6) +
+    "PROVIDER".padEnd(12) +
+    "ACCOUNT".padEnd(32) +
+    "STATUS".padEnd(10) +
+    "AUTH MODE";
+  console.log(ctx.color("1;38;5;208", "STATUS"));
+  console.log(
+    `Provider CLI: ${Object.entries(providerClis)
+      .map(([provider, version]) => `${provider} ${version}`)
+      .join(", ")}`,
+  );
+  console.log("Registry: synchronized\n");
+  console.log(ctx.color("1;38;5;208", header));
+  console.log("-".repeat(header.length));
+  for (const [index, account] of accounts.entries()) {
+    const marker = account.active ? "*" : " ";
+    const number = String(index + 1).padStart(2, "0");
+    const provider = String(account.provider || "-").slice(0, 11).padEnd(12);
+    const name = String(account.email || account.displayName || account.id)
+      .slice(0, 31)
+      .padEnd(32);
+    const status = String(account.status || "UNKNOWN").padEnd(10);
+    const authMode = String(account.authMode || "-");
+    const row = `${marker} ${number} ${provider}${name}${status}${authMode}`;
+    console.log(account.active ? ctx.color("1;32", row) : row);
+  }
+  console.log(`\n${accounts.length} account${accounts.length === 1 ? "" : "s"}`);
+}

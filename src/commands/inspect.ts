@@ -1,4 +1,4 @@
-import { printAccountTable } from "../lib/format.js";
+import { printAccountTable, printStatusTable } from "../lib/format.js";
 import { providerVersion } from "../providers/spawn.js";
 import { withActiveFlags } from "../store.js";
 import { enrichAccountsWithUsage } from "../providers/account-usage.js";
@@ -84,12 +84,30 @@ export async function currentCommand(ctx: CliContext): Promise<void> {
 export async function statusCommand(ctx: CliContext): Promise<void> {
   const provider = ctx.commandArgs()[0]?.toLowerCase();
   const { a, r } = await ctx.store.sync(true, provider || "default");
-  const accounts = withActiveFlags(a, r);
-  ctx.out({
+  const accounts = withActiveFlags(a, r).filter(
+    (item) =>
+      typeof item.provider === "string" && PROVIDER_COMMANDS[item.provider],
+  );
+  const providerNames = [...new Set(accounts.map((item) => String(item.provider)))];
+  const providerClis = Object.fromEntries(
+    await Promise.all(
+      providerNames.map(async (name) => [
+        name,
+        await providerVersion(PROVIDER_COMMANDS[name]),
+      ]),
+    ),
+  );
+  const payload = {
     success: true,
     active: accounts.find((item) => item.active) || null,
-    providerCli: await providerVersion(),
+    providerCli: providerClis[provider || "codex"] || "not detected",
+    providerClis,
     authFile: ctx.paths.authFile,
     registry: "synchronized",
-  });
+  };
+  if (!ctx.jsonMode) {
+    printStatusTable(ctx, accounts, providerClis);
+    return;
+  }
+  ctx.out(payload);
 }

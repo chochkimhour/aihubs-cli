@@ -24,6 +24,7 @@ import {
 } from "./commands/inspect.js";
 import { resumeCommand, sessionCommand } from "./commands/sessions.js";
 import { usageCommand } from "./commands/usage.js";
+import { checkForUpdate } from "./update-check.js";
 
 type CommandHandler = (ctx: CliContext) => Promise<void> | void;
 
@@ -65,6 +66,7 @@ export async function dispatch(ctx: CliContext): Promise<void> {
 
 export async function run(ctx: CliContext = createContext()): Promise<void> {
   try {
+    await checkForUpdate(ctx);
     await dispatch(ctx);
   } catch (e: any) {
     if (!e.silent) ctx.fail("OPERATION_FAILED", e.message);
