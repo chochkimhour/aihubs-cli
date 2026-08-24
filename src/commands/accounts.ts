@@ -1,10 +1,12 @@
 import { promises as fs } from "node:fs";
+import path from "node:path";
 import { findAccount } from "../store.js";
 import { backupAuthPath } from "../store.js";
 import { writeJson } from "../lib/json.js";
 import type { CliContext } from "../context.js";
 import type { Json } from "../types.js";
 import { PROVIDER_COMMANDS } from "../constants.js";
+import { resolvePaths } from "../paths.js";
 
 export async function switchAccount(
   ctx: CliContext,
@@ -194,6 +196,12 @@ export async function removeCommand(ctx: CliContext): Promise<void> {
       delete nextAuth[key];
       authChanged = true;
     }
+    await removeProviderAccountSource(
+      String(account.provider || "default"),
+      account.authEntryKey,
+      account.userId,
+      account.email,
+    );
   }
   const ids = new Set(found.map((item) => item.id));
   await ctx.store.saveRegistry(r.filter((item) => !ids.has(item.id)));
@@ -216,4 +224,63 @@ export async function removeCommand(ctx: CliContext): Promise<void> {
       `✓ Removed ${found.length} account${found.length === 1 ? "" : "s"}: ${labels.join(", ")}`,
     ),
   );
+}
+
+async function removeProviderAccountSource(
+  provider: string,
+  authEntryKey: unknown,
+  userId: unknown,
+  email: unknown,
+): Promise<void> {
+  const paths = resolvePaths(provider);
+  let auth: any;
+  try {
+    auth = JSON.parse(await fs.readFile(paths.authFile, "utf8"));
+  } catch {
+    auth = undefined;
+  }
+  if (auth && typeof auth === "object" && !Array.isArray(auth)) {
+    let changed = false;
+    for (const [key, entry] of Object.entries(auth)) {
+      const value = entry as any;
+      const matches =
+        key === authEntryKey ||
+        (userId &&
+          [value?.user_id, value?.principal_id, value?.account_id].includes(
+            userId,
+          )) ||
+        (email && [value?.email, value?.login].includes(email));
+      if (matches) {
+        delete auth[key];
+        changed = true;
+      }
+    }
+    if (changed) await writeJson(paths.authFile, auth);
+  }
+  if (provider !== "codex") return;
+  const accountDir = path.join(paths.providerHome, "accounts");
+  let names: string[];
+  try {
+    names = await fs.readdir(accountDir);
+  } catch {
+    return;
+  }
+  for (const name of names) {
+    if (!name.endsWith(".auth.json")) continue;
+    const file = path.join(accountDir, name);
+    let value: any;
+    try {
+      value = JSON.parse(await fs.readFile(file, "utf8"));
+    } catch {
+      continue;
+    }
+    const tokens = value?.tokens || value;
+    const matchesUser =
+      (userId &&
+        [tokens?.account_id, tokens?.user_id, tokens?.principal_id].includes(
+          userId,
+        )) ||
+      (email && [tokens?.email, value?.email].includes(email));
+    if (matchesUser) await fs.rm(file, { force: true });
+  }
 }
