@@ -1,6 +1,6 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import { findAccount } from "../store.js";
+import { AccountStore, findAccount } from "../store.js";
 import { backupAuthPath } from "../store.js";
 import { writeJson } from "../lib/json.js";
 import type { CliContext } from "../context.js";
@@ -8,12 +8,24 @@ import type { Json } from "../types.js";
 import { PROVIDER_COMMANDS } from "../constants.js";
 import { resolvePaths } from "../paths.js";
 
+async function syncAllProviderAccounts(ctx: CliContext): Promise<Json[]> {
+  const providers = process.env.PROVIDER_HOME
+    ? ["default"]
+    : Object.keys(PROVIDER_COMMANDS);
+  for (const provider of providers)
+    await new AccountStore(resolvePaths(provider)).sync(true, provider);
+  return ctx.store.registry();
+}
+
 export async function switchAccount(
   ctx: CliContext,
   name?: string,
   provider?: string,
 ): Promise<void> {
-  const { a, r } = await ctx.store.sync(false, provider || "default");
+  const synced = provider
+    ? await ctx.store.sync(false, provider)
+    : { a: await ctx.store.auth(), r: await syncAllProviderAccounts(ctx) };
+  const { a, r } = synced;
   const target = findAccount(
     provider ? r.filter((item) => item.provider === provider) : r,
     name,
@@ -65,7 +77,7 @@ export async function switchCommand(ctx: CliContext): Promise<void> {
 export async function moveCommand(ctx: CliContext): Promise<void> {
   const name = ctx.positional[1];
   const position = ctx.positional[2];
-  const { r } = await ctx.store.sync();
+  const r = await syncAllProviderAccounts(ctx);
   const target = findAccount(r, name);
   if (!target)
     return ctx.fail(
@@ -84,7 +96,7 @@ export async function moveCommand(ctx: CliContext): Promise<void> {
 }
 
 export async function aliasCommand(ctx: CliContext): Promise<void> {
-  const { r } = await ctx.store.sync();
+  const r = await syncAllProviderAccounts(ctx);
   const op = ctx.positional[1];
   const account = ctx.positional[2];
   const alias = ctx.positional[3];
@@ -114,7 +126,7 @@ export async function aliasCommand(ctx: CliContext): Promise<void> {
 }
 
 export async function resetCommand(ctx: CliContext): Promise<void> {
-  const { r } = await ctx.store.sync(true);
+  const r = await syncAllProviderAccounts(ctx);
   const operation = ctx.positional[1];
   const accountName = ctx.positional[2];
   const value = ctx.positional[3];
@@ -163,7 +175,8 @@ export async function removeCommand(ctx: CliContext): Promise<void> {
       "INVALID_USAGE",
       "Use remove <number|id|email|alias> [number|id|email|alias ...]",
     );
-  const { a, r } = await ctx.store.sync();
+  const r = await syncAllProviderAccounts(ctx);
+  const a = await ctx.store.auth();
   const found: Json[] = [];
   const missing: string[] = [];
   for (const name of names) {
