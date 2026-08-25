@@ -87,6 +87,28 @@ async function runCodexLoginIsolated(
     );
     const scratchAuth = path.join(scratchHome, "auth.json");
     const raw = JSON.parse(await fs.readFile(scratchAuth, "utf8"));
+    // Recent Codex versions require plan_type for ChatGPT authentication.
+    // Some login responses omit it, so derive it from the ID-token claims and
+    // persist a safe fallback before installing the auth file.
+    if (typeof raw.plan_type !== "string" || !raw.plan_type) {
+      let planType = "free";
+      const idToken = raw?.tokens?.id_token;
+      if (typeof idToken === "string") {
+        try {
+          const payload = idToken.split(".")[1];
+          const claims = JSON.parse(
+            Buffer.from(payload, "base64url").toString("utf8"),
+          );
+          const claimPlan =
+            claims?.["https://api.openai.com/auth"]?.chatgpt_plan_type;
+          if (typeof claimPlan === "string" && claimPlan) planType = claimPlan;
+        } catch {
+          // Keep the provider-compatible free fallback for malformed claims.
+        }
+      }
+      raw.plan_type = planType;
+      await writeJson(scratchAuth, raw);
+    }
     const accountId = raw?.tokens?.account_id;
     await fs.mkdir(realPaths.providerHome, { recursive: true });
     await fs.copyFile(scratchAuth, realPaths.authFile);

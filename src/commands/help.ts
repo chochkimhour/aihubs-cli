@@ -34,8 +34,12 @@ export function printHelp(ctx: CliContext): void {
   console.log(
     "                               Agy account switching uses Agy's own OAuth flow",
   );
-  console.log("  resume [provider] [session]  Resume a provider session");
-  console.log("  continue <provider> <session> Continue a provider session");
+  console.log(
+    "  continue [provider]          Continue the provider's last conversation",
+  );
+  console.log(
+    "  codex|grok|agy                Open that provider's last conversation",
+  );
   console.log(
     "  session [provider]           List available provider sessions",
   );

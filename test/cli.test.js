@@ -180,3 +180,17 @@ test("removes several accounts by row number and email in one command", async ()
   const emails = JSON.parse(after.stdout).accounts.map((item) => item.email);
   assert.deepEqual(emails, ["two@example.com"]);
 });
+
+test("builds correct provider arguments for continue", async () => {
+  const { getContinueArgs } = await import(
+    "../dist/commands/sessions.js"
+  );
+  assert.deepEqual(getContinueArgs("codex"), ["resume", "--last"]);
+  assert.deepEqual(getContinueArgs("codex", "sess-1"), ["resume", "sess-1"]);
+  assert.deepEqual(getContinueArgs("grok"), ["--continue"]);
+  assert.deepEqual(getContinueArgs("grok", "sess-2"), ["--resume", "sess-2"]);
+  assert.deepEqual(getContinueArgs("agy"), ["--continue"]);
+  assert.deepEqual(getContinueArgs("agy", "conv-1"), ["--conversation", "conv-1"]);
+  assert.deepEqual(getContinueArgs("claude"), ["--resume"]);
+  assert.deepEqual(getContinueArgs("claude", "sess-3"), ["--resume", "sess-3"]);
+});

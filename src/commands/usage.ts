@@ -78,8 +78,13 @@ export async function usageCommand(ctx: CliContext): Promise<void> {
 export async function autoSwitch(
   ctx: CliContext,
   silent = false,
+  explicitProvider?: string,
 ): Promise<void> {
-  const requestedProvider = ctx.positional[1]?.toLowerCase();
+  const requestedProvider =
+    explicitProvider ||
+    (PROVIDER_COMMANDS[ctx.positional[0]?.toLowerCase()]
+      ? ctx.positional[0].toLowerCase()
+      : ctx.positional[1]?.toLowerCase());
   const provider =
     requestedProvider && PROVIDER_COMMANDS[requestedProvider]
       ? requestedProvider

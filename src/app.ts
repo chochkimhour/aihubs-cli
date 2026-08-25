@@ -22,7 +22,7 @@ import {
   listCommand,
   statusCommand,
 } from "./commands/inspect.js";
-import { resumeCommand, sessionCommand } from "./commands/sessions.js";
+import { continueCommand, sessionCommand } from "./commands/sessions.js";
 import { doctorCommand } from "./commands/doctor.js";
 import { checkForUpdate } from "./update-check.js";
 
@@ -34,9 +34,13 @@ const commands: Record<string, CommandHandler> = {
   current: currentCommand,
   status: statusCommand,
   switch: switchCommand,
-  resume: resumeCommand,
-  continue: resumeCommand,
+  continue: continueCommand,
   session: sessionCommand,
+  codex: (ctx) => continueCommand(ctx, "codex"),
+  grok: (ctx) => continueCommand(ctx, "grok"),
+  agy: (ctx) => continueCommand(ctx, "agy"),
+  claude: (ctx) => continueCommand(ctx, "claude"),
+  freebuff: (ctx) => continueCommand(ctx, "freebuff"),
   move: moveCommand,
   alias: aliasCommand,
   reset: resetCommand,

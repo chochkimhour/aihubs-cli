@@ -74,9 +74,13 @@ aihubs-cli list codex
 aihubs-cli list grok
 aihubs-cli list agy
 aihubs-cli session codex
-aihubs-cli resume grok <session-id-or-title>
-aihubs-cli continue codex <session-id-or-title>
-aihubs-cli continue grok <session-id-or-title>
+aihubs-cli continue
+aihubs-cli continue grok
+aihubs-cli continue codex
+aihubs-cli continue claude
+aihubs-cli grok
+aihubs-cli codex
+aihubs-cli agy
 aihubs-cli current codex
 
 # Inspect and switch accounts
@@ -100,8 +104,10 @@ Account selectors can be row numbers, account IDs, email addresses, or aliases.
 shown by `list`, for example `aihubs-cli switch codex 04`. `list` can show more
 than one active account because each provider has its own active session.
 Account switching is supported only for `codex` and `grok`.
-Provider-specific forms are supported for `list`, `session`, `resume`, and
-`current`. `status` always shows all providers. Without a provider, other
+Provider-specific forms are supported for `list`, `session`, `continue`, and
+`current`. `continue` resumes a conversation within the selected provider;
+cross-provider continuation is not supported. `status` always shows all
+providers. Without a provider, other
 commands use the configured default provider. Use
 `aihubs-cli --help` for the complete command list.
 
