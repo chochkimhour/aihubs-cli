@@ -46,7 +46,7 @@
     "url": "git+https://github.com/chochkimhour/aihubs-cli.git"
   },
   "devDependencies": {
-    "@types/node": "^22.10.0",
+    "@types/node": "^26.4.0",
     "prettier": "^3.9.6",
     "typescript": "^5.7.2"
   }
